@@ -209,6 +209,8 @@ git clone https://github.com/dongzhiwei-us/notchdesk.git
 cd notchdesk
 ```
 
+若当前电脑已配置该账号的 GitHub SSH 公钥，也可用 `git clone git@github.com:dongzhiwei-us/notchdesk.git`。先运行 `ssh -T git@github.com`，返回 `Hi dongzhiwei-us!` 表示身份正确；GitHub 不提供交互式 shell，因此该验证命令返回退出码 1 属正常行为。另一台 Mac 需配置自己的 SSH 密钥，不能仅凭 Windows 上的密钥备注邮箱完成认证，也不要把私钥提交到仓库。
+
 **3. 安装依赖并生成两个架构的安装包。**
 
 ```sh
