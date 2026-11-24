@@ -1,0 +1,21 @@
+{
+  "id": "attention",
+  "name": "会话召回",
+  "icon": "bell-ring",
+  "version": "0.6.8",
+  "entry": "index.cjs",
+  "settings": {
+    "enabled": {
+      "type": "boolean",
+      "label": "接收会话通知",
+      "default": true
+    }
+  },
+  "locales": {
+    "zh-CN": "locales/zh-CN.json",
+    "en-US": "locales/en-US.json"
+  },
+  "presentation": {
+    "wheel": false
+  }
+}

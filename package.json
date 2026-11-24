@@ -1,0 +1,61 @@
+{
+  "name": "notchdesk",
+  "productName": "悬屿 NotchDesk",
+  "version": "0.6.8",
+  "private": true,
+  "description": "Local-first desktop notch with hot-loadable plugins and MCP",
+  "author": "NotchDesk",
+  "main": "scripts/desktop.cjs",
+  "scripts": {
+    "start": "node scripts/start.mjs",
+    "build": "node scripts/build.mjs",
+    "check": "tsc --noEmit",
+    "server": "node scripts/service.cjs server",
+    "mcp": "node scripts/service.cjs mcp",
+    "pack:dir": "node scripts/package.mjs dir",
+    "dist:win:x64": "node scripts/package.mjs win x64",
+    "dist:win:arm64": "node scripts/package.mjs win arm64",
+    "dist:mac:x64": "node scripts/package.mjs mac x64",
+    "dist:mac:arm64": "node scripts/package.mjs mac arm64",
+    "dist:mac": "node scripts/package.mjs mac all",
+    "dist:mac:all": "node scripts/package.mjs mac all",
+    "dist:mac:x86": "node scripts/package.mjs mac x64",
+    "dist:mac:plan": "node scripts/package.mjs mac all --plan",
+    "dist:mac:signed": "node scripts/package.mjs mac all --signed --notarize",
+    "pack:mac:arm64": "node scripts/package.mjs mac arm64 --dir",
+    "pack:mac:x64": "node scripts/package.mjs mac x64 --dir",
+    "prepare:mac": "node scripts/runtime.mjs mac all"
+  },
+  "engines": {
+    "node": ">=24.13.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.2",
+    "ajv": "^8.17.1",
+    "cheerio": "^1.1.2",
+    "chokidar": "^4.0.3",
+    "dompurify": "^3.3.0",
+    "i18next": "^27.2.2",
+    "lucide-react": "^0.577.0",
+    "marked": "^16.4.2",
+    "pdfjs-dist": "^5.7.284",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "sanitize-html": "^2.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "@types/sanitize-html": "^2.16.0",
+    "electron": "45.4.1",
+    "electron-builder": "^26.18.0",
+    "esbuild": "^0.27.0",
+    "playwright-core": "^1.62.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.3.0"
+  },
+  "notchdesk": {
+    "runtimeNodeVersion": "24.19.0"
+  }
+}

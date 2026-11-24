@@ -1,0 +1,12 @@
+{
+  "id": "snippets",
+  "name": "文本片段",
+  "icon": "braces",
+  "version": "0.6.8",
+  "entry": "index.cjs",
+  "settings": {},
+  "locales": {
+    "zh-CN": "locales/zh-CN.json",
+    "en-US": "locales/en-US.json"
+  }
+}

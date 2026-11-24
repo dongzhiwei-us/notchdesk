@@ -1,0 +1,23 @@
+{
+  "id": "clipline",
+  "name": "悬挂剪贴",
+  "icon": "paperclip",
+  "version": "0.6.8",
+  "entry": "index.cjs",
+  "settings": {
+    "copyFiles": {
+      "type": "boolean",
+      "label": "把较小文件另存到应用中",
+      "default": false
+    },
+    "captureShortcut": {
+      "type": "string",
+      "label": "上绳快捷键",
+      "default": "CommandOrControl+Alt+V"
+    }
+  },
+  "locales": {
+    "zh-CN": "locales/zh-CN.json",
+    "en-US": "locales/en-US.json"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "id": "morning",
+  "name": "开发晨报",
+  "icon": "sun",
+  "version": "0.6.8",
+  "entry": "index.cjs",
+  "settings": {
+    "enabled": {
+      "type": "boolean",
+      "label": "每日晨报提醒",
+      "default": true
+    },
+    "deliveryTime": {
+      "type": "time",
+      "label": "每日晨报时间",
+      "default": "10:00"
+    },
+    "maxItems": {
+      "type": "number",
+      "label": "每组最多几项",
+      "default": 4,
+      "min": 1,
+      "max": 12
+    }
+  },
+  "locales": {
+    "zh-CN": "locales/zh-CN.json",
+    "en-US": "locales/en-US.json"
+  }
+}

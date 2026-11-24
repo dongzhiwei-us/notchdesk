@@ -1,0 +1,59 @@
+{
+  "id": "wellness",
+  "name": "喝水走动",
+  "icon": "heart-pulse",
+  "version": "0.6.8",
+  "entry": "index.cjs",
+  "settings": {
+    "enabled": {
+      "type": "boolean",
+      "label": "提醒休息",
+      "default": true
+    },
+    "workStart": {
+      "type": "time",
+      "label": "工作时段开始",
+      "default": "09:00"
+    },
+    "workEnd": {
+      "type": "time",
+      "label": "工作时段结束",
+      "default": "22:00"
+    },
+    "waterMinutes": {
+      "type": "number",
+      "label": "喝水间隔分钟数",
+      "default": 60,
+      "min": 1,
+      "max": 720
+    },
+    "walkMinutes": {
+      "type": "number",
+      "label": "走动间隔分钟数",
+      "default": 120,
+      "min": 1,
+      "max": 720
+    },
+    "snoozeMinutes": {
+      "type": "number",
+      "label": "稍后提醒分钟数",
+      "default": 10,
+      "min": 1,
+      "max": 180
+    },
+    "idleThreshold": {
+      "type": "number",
+      "label": "超过多少秒无操作暂停计时",
+      "default": 180,
+      "min": 10,
+      "max": 1800
+    }
+  },
+  "locales": {
+    "zh-CN": "locales/zh-CN.json",
+    "en-US": "locales/en-US.json"
+  },
+  "presentation": {
+    "wheel": false
+  }
+}

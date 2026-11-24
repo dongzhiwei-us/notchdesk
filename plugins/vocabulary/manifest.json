@@ -1,0 +1,30 @@
+{
+  "id": "vocabulary",
+  "name": "词汇复习",
+  "icon": "book-open",
+  "version": "0.6.8",
+  "entry": "index.cjs",
+  "settings": {
+    "enabled": {
+      "type": "boolean",
+      "label": "每日复习提醒",
+      "default": true
+    },
+    "reviewTime": {
+      "type": "time",
+      "label": "每日提醒时间",
+      "default": "11:00"
+    },
+    "dailyLimit": {
+      "type": "number",
+      "label": "每天最多复习的词数",
+      "default": 12,
+      "min": 1,
+      "max": 100
+    }
+  },
+  "locales": {
+    "zh-CN": "locales/zh-CN.json",
+    "en-US": "locales/en-US.json"
+  }
+}

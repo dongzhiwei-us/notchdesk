@@ -1,0 +1,95 @@
+name: Desktop packages
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Packages to build
+        type: choice
+        options: [mac, windows, all]
+        default: mac
+      sign_mac:
+        description: Sign macOS applications with Developer ID secrets
+        type: boolean
+        default: false
+      notarize_mac:
+        description: Notarize macOS applications (requires sign_mac)
+        type: boolean
+        default: false
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  mac:
+    if: github.event_name != 'workflow_dispatch' || inputs.target != 'windows'
+    name: macOS ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: macos-15, arch: arm64 }
+          - { runner: macos-15-intel, arch: x64 }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      NOTCH_ARTIFACTS: ${{ github.workspace }}/release
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+      NOTCH_MAC_SIGNED: ${{ inputs.sign_mac && '1' || '0' }}
+      NOTCH_MAC_NOTARIZE: ${{ inputs.notarize_mac && '1' || '0' }}
+      CSC_LINK: ${{ inputs.sign_mac && secrets.MAC_CSC_LINK || '' }}
+      CSC_KEY_PASSWORD: ${{ inputs.sign_mac && secrets.MAC_CSC_KEY_PASSWORD || '' }}
+      APPLE_ID: ${{ inputs.notarize_mac && secrets.APPLE_ID || '' }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ inputs.notarize_mac && secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
+      APPLE_TEAM_ID: ${{ inputs.notarize_mac && secrets.APPLE_TEAM_ID || '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run dist:mac:${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NotchDesk-mac-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            release/mac-${{ matrix.arch }}/*.dmg
+            release/mac-${{ matrix.arch }}/*.zip
+            release/mac-${{ matrix.arch }}/*.blockmap
+            release/mac-${{ matrix.arch }}/SHA256SUMS.txt
+            release/mac-${{ matrix.arch }}/build-manifest.json
+  windows:
+    if: github.event_name != 'workflow_dispatch' || inputs.target != 'mac'
+    name: Windows ${{ matrix.arch }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { runner: windows-2022, arch: x64 }
+          - { runner: windows-11-arm, arch: arm64 }
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    env:
+      NOTCH_ARTIFACTS: ${{ github.workspace }}/release
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run dist:win:${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: NotchDesk-win-${{ matrix.arch }}
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            release/win-${{ matrix.arch }}/*.exe
+            release/win-${{ matrix.arch }}/*.blockmap
+            release/win-${{ matrix.arch }}/SHA256SUMS.txt
+            release/win-${{ matrix.arch }}/build-manifest.json

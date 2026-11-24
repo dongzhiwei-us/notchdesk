@@ -1,0 +1,25 @@
+{
+  "id": "todo",
+  "name": "待办",
+  "icon": "list-todo",
+  "version": "0.6.8",
+  "entry": "index.cjs",
+  "settings": {
+    "reminders": {
+      "type": "boolean",
+      "label": "提醒到期任务",
+      "default": true
+    },
+    "snoozeMinutes": {
+      "type": "number",
+      "label": "稍后提醒分钟数",
+      "default": 5,
+      "min": 1,
+      "max": 180
+    }
+  },
+  "locales": {
+    "zh-CN": "locales/zh-CN.json",
+    "en-US": "locales/en-US.json"
+  }
+}

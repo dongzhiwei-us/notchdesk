@@ -1,0 +1,35 @@
+{
+  "id": "trends",
+  "name": "仓库趋势",
+  "icon": "trending-up",
+  "version": "0.6.8",
+  "entry": "index.cjs",
+  "settings": {
+    "defaultPeriod": {
+      "type": "select",
+      "label": "GitHub Trending 默认时间范围",
+      "default": "daily",
+      "options": [
+        "daily",
+        "weekly",
+        "monthly"
+      ]
+    },
+    "defaultLanguage": {
+      "type": "string",
+      "label": "默认语言筛选（空表示全部）",
+      "default": ""
+    },
+    "cacheMinutes": {
+      "type": "number",
+      "label": "趋势缓存分钟数",
+      "default": 20,
+      "min": 5,
+      "max": 120
+    }
+  },
+  "locales": {
+    "zh-CN": "locales/zh-CN.json",
+    "en-US": "locales/en-US.json"
+  }
+}
