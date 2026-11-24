@@ -43,13 +43,17 @@ jobs:
       APPLE_TEAM_ID: ${{ inputs.notarize_mac && secrets.APPLE_TEAM_ID || '' }}
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-      - run: npm ci
-      - run: npm run check
-      - run: npm run dist:mac:${{ matrix.arch }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --prod=false
+      - run: pnpm run check
+      - run: pnpm run dist:mac:${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
           name: NotchDesk-mac-${{ matrix.arch }}
@@ -76,13 +80,17 @@ jobs:
       NOTCH_ARTIFACTS: ${{ github.workspace }}/release
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: npm
-      - run: npm ci
-      - run: npm run check
-      - run: npm run dist:win:${{ matrix.arch }}
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile --prod=false
+      - run: pnpm run check
+      - run: pnpm run dist:win:${{ matrix.arch }}
       - uses: actions/upload-artifact@v4
         with:
           name: NotchDesk-win-${{ matrix.arch }}

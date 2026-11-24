@@ -20,7 +20,7 @@ export function packageOptions(args,host=process.platform,env=process.env){
 }
 
 export function requireBuildHost(options,host=process.platform){
-  if(options.platform==='mac'&&host!=='darwin')throw Error('macOS DMG/应用签名依赖 macOS 的 hdiutil/codesign，不能在 Windows/Linux 直接制作。请在任意 Mac 运行 npm run dist:mac，或触发 .github/workflows/package.yml 的 mac 构建。Windows 可运行 npm run dist:mac:plan 查看构建计划、npm run prepare:mac 缓存双架构运行时。');
+  if(options.platform==='mac'&&host!=='darwin')throw Error('macOS DMG/应用签名依赖 macOS 的 hdiutil/codesign，不能在 Windows/Linux 直接制作。请在任意 Mac 运行 pnpm run dist:mac，或触发 .github/workflows/package.yml 的 mac 构建。Windows 可运行 pnpm run dist:mac:plan 查看构建计划、pnpm run prepare:mac 缓存双架构运行时。');
   if(options.platform==='win'&&host!=='win32')throw Error('Windows 安装包请使用 Windows 构建机或 Desktop packages CI 工作流。');
 }
 

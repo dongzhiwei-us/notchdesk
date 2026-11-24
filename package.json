@@ -27,7 +27,8 @@
     "prepare:mac": "node scripts/runtime.mjs mac all"
   },
   "engines": {
-    "node": ">=24.13.0"
+    "node": ">=24.13.0",
+    "pnpm": ">=11.20.0 <12"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.32.2",
@@ -57,5 +58,6 @@
   },
   "notchdesk": {
     "runtimeNodeVersion": "24.19.0"
-  }
+  },
+  "packageManager": "pnpm@11.20.0"
 }

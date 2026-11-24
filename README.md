@@ -19,20 +19,20 @@ GitHub 仓库：[dongzhiwei-us/notchdesk](https://github.com/dongzhiwei-us/notch
 }
 ```
 
-端点仅监听本机回环地址，支持多个独立会话、GET 事件流和 DELETE 会话结束。插件热加载、启停和 MCP 权限变更会触发工具列表变更通知。令牌保存在业务数据目录的 mcp-token 文件，重启后继续有效，勿将真实令牌写入项目文档。端口可用 `NOTCH_PORT` 指定，测试使用 0 自动分配端口，设置页始终显示实际地址。本机浏览器客户端支持 CORS，外部网页 Origin 被拒绝。后台服务可单独用 `npm run server` 启动。
+端点仅监听本机回环地址，支持多个独立会话、GET 事件流和 DELETE 会话结束。插件热加载、启停和 MCP 权限变更会触发工具列表变更通知。令牌保存在业务数据目录的 mcp-token 文件，重启后继续有效，勿将真实令牌写入项目文档。端口可用 `NOTCH_PORT` 指定，测试使用 0 自动分配端口，设置页始终显示实际地址。本机浏览器客户端支持 CORS，外部网页 Origin 被拒绝。后台服务可单独用 `pnpm run server` 启动。
 
-原有 `npm run mcp` 的 stdio 入口用于兼容已经配置的客户端。设置页默认导出 HTTP 配置。
+原有 `pnpm run mcp` 的 stdio 入口用于兼容已经配置的客户端。设置页默认导出 HTTP 配置。
 
 ## 启动和使用
 
-源码开发需要 Node.js 24.13 或更高版本。在项目目录运行以下命令。
+源码开发需要 Node.js 24.13 或更高版本和 pnpm 11.20.0。项目通过 `packageManager` 固定 pnpm 版本，`pnpm-lock.yaml` 是唯一依赖锁文件。尚未安装 pnpm 时，先运行 `npm install --global pnpm@11.20.0`；该命令只用于准备包管理器。然后在项目目录运行以下命令。
 
 ```powershell
-npm ci
-npm start
+pnpm install --frozen-lockfile --prod=false
+pnpm start
 ```
 
-`npm start` 会构建界面并启动 Electron。后台服务随桌面启动。关闭桌面 UI 后，本地 MCP 客户端仍可按需启动后台服务。托盘中可以展开悬屿、进入设置、打开插件目录或退出。
+`pnpm start` 会构建界面并启动 Electron。后台服务随桌面启动。关闭桌面 UI 后，本地 MCP 客户端仍可按需启动后台服务。托盘中可以展开悬屿、进入设置、打开插件目录或退出。
 
 - 鼠标移到屏幕上方的刘海，顶边停靠时展开半圆插件轮盘，悬浮停靠时展开完整圆盘。鼠标滚轮或触控板滑动会旋转圆盘并吸附到对应刻度；也可直接点击插件图标选择并打开对应内容。悬停图标会显示反馈，拖动图标不会切换插件。面板的图钉可固定当前内容。鼠标移出后，未固定且未编辑的面板会收起。`Esc` 可返回或关闭当前面板。
 - 点击展开区域的设置齿轮，可切换浅色、深色或跟随系统，选择顶边半圆或悬浮完整圆盘、主题色和磨砂/实色材质，配置各插件、仓库账号和 MCP。
@@ -165,26 +165,26 @@ export function mount(root, ctx) {
 | 发行物 | `D:\environments\data\artifacts\notchdesk` |
 | 测试临时状态 | `D:\environments\temp\notchdesk` |
 
-自定义运行目录可用 `NOTCH_DATA`、`NOTCH_PLUGINS` 和 `NOTCH_LOGS`。未设置 Windows 的 `XDG_DATA_HOME` 时，应用在系统应用数据目录下使用 `NotchDesk`。macOS 默认使用 `~/Library/Application Support/NotchDesk`。开发入口仍为 `npm start`。
+自定义运行目录可用 `NOTCH_DATA`、`NOTCH_PLUGINS` 和 `NOTCH_LOGS`。未设置 Windows 的 `XDG_DATA_HOME` 时，应用在系统应用数据目录下使用 `NotchDesk`。macOS 默认使用 `~/Library/Application Support/NotchDesk`。开发入口仍为 `pnpm start`。
 
 | 目标 | 命令 |
 | --- | --- |
-| 当前平台解包目录 | `npm run pack:dir` |
-| Windows x64 | `npm run dist:win:x64` |
-| Windows ARM64 | `npm run dist:win:arm64` |
-| macOS 双架构安装包 | `npm run dist:mac` |
-| macOS Intel x64 | `npm run dist:mac:x64` |
-| macOS Apple Silicon | `npm run dist:mac:arm64` |
-| macOS 双架构签名并公证 | `npm run dist:mac:signed` |
-| macOS 解包目录 | `npm run pack:mac:arm64` / `npm run pack:mac:x64` |
+| 当前平台解包目录 | `pnpm run pack:dir` |
+| Windows x64 | `pnpm run dist:win:x64` |
+| Windows ARM64 | `pnpm run dist:win:arm64` |
+| macOS 双架构安装包 | `pnpm run dist:mac` |
+| macOS Intel x64 | `pnpm run dist:mac:x64` |
+| macOS Apple Silicon | `pnpm run dist:mac:arm64` |
+| macOS 双架构签名并公证 | `pnpm run dist:mac:signed` |
+| macOS 解包目录 | `pnpm run pack:mac:arm64` / `pnpm run pack:mac:x64` |
 
 发行包包含 Electron 桌面、本地服务、MCP 入口、内置插件以及对应平台和 CPU 的 Node 运行时，用户安装后无需另装 Node。打包脚本固定使用 `package.json` 中的 `notchdesk.runtimeNodeVersion`，从 Node 官方发行文件准备运行时、核对官方 SHA-256，再检查 Node 与 Electron 主程序的二进制架构，避免把构建机的 Windows 或另一种 CPU 运行时装进包内。运行时许可证随包分发。
 
 ### macOS 安装包
 
-源码压缩包为 `NotchDesk-0.6.8-source-mac.zip`，解压后根目录是 `notchdesk`，包含 README、完整源码、八个内置插件、打包脚本、资源文件和 `package-lock.json`。依赖在 Mac 上重新安装，压缩包不携带 Windows 的 `node_modules`、本机业务数据、账号凭据或已有安装包。首次构建需要联网下载 npm 依赖、Electron、构建工具及两套 Node 运行时，不是离线构建包。
+请从当前 GitHub 仓库获取最新源码，包含 README、完整源码、八个内置插件、打包脚本、资源文件、`pnpm-workspace.yaml` 和 `pnpm-lock.yaml`。依赖在 Mac 上重新安装，源码不携带 Windows 的 `node_modules`、本机业务数据、账号凭据或已有安装包。首次构建需要联网下载 pnpm 依赖、Electron、构建工具及两套 Node 运行时，不是离线构建包。
 
-**1. 准备环境。** 在 Apple Silicon 或 Intel Mac 安装 Node.js 24.13+（本项目打包运行时为 24.19.0）。首次使用命令行开发工具时，在终端执行：
+**1. 准备环境。** 在 Apple Silicon 或 Intel Mac 安装 Node.js 24.13+（本项目打包运行时为 24.19.0）以及 pnpm 11.20.0；如果没有 pnpm，运行 `npm install --global pnpm@11.20.0`。首次使用命令行开发工具时，在终端执行：
 
 ```sh
 xcode-select --install
@@ -192,22 +192,14 @@ xcode-select --install
 
 等待系统安装完成；若提示已安装，可直接继续。后面的命令使用普通用户执行，无需 `sudo`，默认 ad-hoc 签名也无需 Apple 开发者账号。
 
-**2. 解压并进入项目。** 例如将源码 ZIP 放在「下载」目录，可以在终端执行：
-
-```sh
-cd ~/Downloads
-unzip NotchDesk-0.6.8-source-mac.zip
-cd notchdesk
-```
-
-也可以在 Finder 双击解压，再在终端进入解压后的 `notchdesk` 目录。若保存位置不同，调整上面的目录。若同时复制了 `.zip.sha256` 校验文件，可在解压前运行 `shasum -a 256 -c NotchDesk-0.6.8-source-mac.zip.sha256` 核对传输完整性。
-
-从 GitHub 获取源码时，用下面两条命令代替解压步骤，再继续第 3 步。私有仓库需先为 Git 配置已授权的 GitHub 登录；浏览器登录不会自动给所有终端配置 Git 凭据。也可在仓库页面通过 Code → Download ZIP 下载源码。
+**2. 获取源码并进入项目。** 私有仓库需先为 Git 配置已授权的 GitHub 登录，浏览器登录不会自动给所有终端配置 Git 凭据。在终端执行：
 
 ```sh
 git clone https://github.com/dongzhiwei-us/notchdesk.git
 cd notchdesk
 ```
+
+也可在仓库页面通过 Code → Download ZIP 下载最新源码，在 Finder 双击解压，再进入解压后的 `notchdesk-main` 目录，继续第 3 步。已有 Git 工作副本可执行 `git pull --ff-only` 更新。pnpm 迁移前分发的源码 ZIP 仍是旧版本，请重新获取当前源码。
 
 若当前电脑已配置该账号的 GitHub SSH 公钥，也可用 `git clone git@github.com:dongzhiwei-us/notchdesk.git`。先运行 `ssh -T git@github.com`，返回 `Hi dongzhiwei-us!` 表示身份正确；GitHub 不提供交互式 shell，因此该验证命令返回退出码 1 属正常行为。另一台 Mac 需配置自己的 SSH 密钥，不能仅凭 Windows 上的密钥备注邮箱完成认证，也不要把私钥提交到仓库。
 
@@ -215,14 +207,15 @@ cd notchdesk
 
 ```sh
 node --version
+pnpm --version
 xcode-select -p
-npm ci --include=dev
-npm run check
-npm run dist:mac
+pnpm install --frozen-lockfile --prod=false
+pnpm run check
+pnpm run dist:mac
 open release
 ```
 
-`npm ci --include=dev` 保留构建所需的 Vite、TypeScript、Electron 和 electron-builder。不要从 Windows 复制 `node_modules`，也不要使用 `--omit=dev` 或 `--omit=optional`；Vite 使用的 esbuild/Rollup 原生依赖需要按当前 Mac 架构安装。构建不依赖 Git 仓库元数据，可直接在解压后的源码目录执行。
+`pnpm install --frozen-lockfile --prod=false` 保留构建所需的 Vite、TypeScript、Electron 和 electron-builder。不要从 Windows 复制 `node_modules`，也不要使用 `--prod` 或 `--no-optional`；Vite 使用的 esbuild/Rollup 原生依赖需要按当前 Mac 架构安装。`pnpm-workspace.yaml` 显式允许 Electron、esbuild、fsevents 与 electron-winstaller 所需的安装脚本。不要用其他包管理器重新生成锁文件。构建不依赖 Git 仓库元数据，可直接在解压后的源码目录执行。
 
 同一台 Mac 可以依次构建两个架构。也可以通过上表命令只构建其中一种。这里的 Intel / `x86` 指 **64 位 x64**，`dist:mac:x86` 是 `dist:mac:x64` 的别名；不提供 32 位安装包。`dist:mac:all` 与 `dist:mac` 等价。
 
@@ -244,20 +237,20 @@ release/
 
 **4. 安装。** Apple Silicon 使用 `mac-arm64` 下的 DMG，Intel Mac 使用 `mac-x64` 下的 DMG。打开对应 DMG，将 NotchDesk 拖到 Applications（应用程序），再从应用程序启动。每个 ZIP 同样包含对应架构的 `.app`，可以解压后放入应用程序。构建命令成功只说明安装包生成完成，另一种架构的实际启动仍需在对应机器验收。
 
-**下载或依赖失败时：** 先检查网络及代理是否可用。原生依赖缺失时，在当前 Mac 上重新运行 `npm ci --include=dev --include=optional`；不要手动复制另一个系统的依赖。Electron 下载可通过 `ELECTRON_MIRROR` 配置兼容镜像，Node 运行时镜像配置见下文。若报 Node 版本过低，先切换到 24.13+ 再重新安装依赖。构建失败时保留终端中第一条错误，重新运行同一个架构命令即可，无需清除业务数据。
+**下载或依赖失败时：** 先检查网络及代理是否可用。原生依赖缺失时，在当前 Mac 上重新运行 `pnpm install --frozen-lockfile --prod=false`；不要手动复制另一个系统的依赖。Electron 下载可通过 `ELECTRON_MIRROR` 配置兼容镜像，Node 运行时镜像配置见下文。若报 Node 版本过低，先切换到 24.13+ 再重新安装依赖。构建失败时保留终端中第一条错误，重新运行同一个架构命令即可，无需清除业务数据。
 
 `SHA256SUMS.txt` 校验最终安装包；`build-manifest.json` 记录版本、架构、Electron/Node 版本、运行时来源与最终产物哈希。运行时缓存可用 `NOTCH_RUNTIME_CACHE` 覆盖；本机遵循 D 盘规范，使用 `D:\environments\cache\notchdesk\runtimes`。需要镜像时可设置 HTTPS 的 `NOTCH_NODE_MIRROR`（版本目录的父地址），文件仍按 Node 官方清单校验。
 
-默认使用 ad-hoc 签名，不需要 Apple 证书；从网络下载后，macOS 可能要求确认来源。公开分发建议使用 Developer ID 签名和公证。在当前进程环境中提供以下凭据，再运行 `npm run dist:mac:signed`：
+默认使用 ad-hoc 签名，不需要 Apple 证书；从网络下载后，macOS 可能要求确认来源。公开分发建议使用 Developer ID 签名和公证。在当前进程环境中提供以下凭据，再运行 `pnpm run dist:mac:signed`：
 
 - `CSC_LINK`：Developer ID Application 的 `.p12` 证书文件路径或 electron-builder 支持的证书内容；`CSC_KEY_PASSWORD` 为证书密码。也可改用已装入钥匙串的 `CSC_NAME` 或 `NOTCH_MAC_IDENTITY`。
 - 公证使用 `APPLE_ID`、`APPLE_APP_SPECIFIC_PASSWORD`、`APPLE_TEAM_ID` 三项；也支持 `APPLE_API_KEY`、`APPLE_API_KEY_ID`、`APPLE_API_ISSUER`，或 `APPLE_KEYCHAIN_PROFILE`。
 
-只签名可执行 `npm run dist:mac -- --signed`；脚本会提前检查凭据，给嵌入的 Node 设置执行权限并纳入应用签名，签名模式启用 hardened runtime。凭据仅通过环境或 CI Secrets 提供，不提交到源码。具体签名与公证机制见 [electron-builder macOS 文档](https://www.electron.build/v26/docs/mac/)。
+只签名可执行 `pnpm run dist:mac --signed`；脚本会提前检查凭据，给嵌入的 Node 设置执行权限并纳入应用签名，签名模式启用 hardened runtime。凭据仅通过环境或 CI Secrets 提供，不提交到源码。具体签名与公证机制见 [electron-builder macOS 文档](https://www.electron.build/v26/docs/mac/)。
 
 ### Windows 准备与云端构建
 
-Windows 可以运行 `npm run dist:mac:plan` 查看两个架构的构建计划，运行 `npm run prepare:mac` 下载、校验并缓存两套 Mac Node 运行时。DMG 制作和 macOS 签名依赖 macOS 工具，实际构建须在 Mac 执行；Windows 的打包命令会提前提示，不会把 Windows 程序改名当作 Mac 应用。
+Windows 可以运行 `pnpm run dist:mac:plan` 查看两个架构的构建计划，运行 `pnpm run prepare:mac` 下载、校验并缓存两套 Mac Node 运行时。DMG 制作和 macOS 签名依赖 macOS 工具，实际构建须在 Mac 执行；Windows 的打包命令会提前提示，不会把 Windows 程序改名当作 Mac 应用。
 
 项目包含 `.github/workflows/package.yml`。将源码提交到自己的 GitHub 仓库后，在 **Actions → Desktop packages → Run workflow** 选择 `mac`，会分别使用 Apple Silicon 和 Intel runner 构建，完成后下载 `NotchDesk-mac-arm64` 与 `NotchDesk-mac-x64` 两组 Artifacts。选择 `all` 时同时构建 Windows。`v*` tag 也会触发全部架构构建；工作流仅上传构建产物，不自动发布 Release。
 
@@ -268,8 +261,8 @@ Windows 可以运行 `npm run dist:mac:plan` 查看两个架构的构建计划�
 ## 测试
 
 ```powershell
-npm run check
-npm run build
+pnpm run check
+pnpm run build
 node scripts/plugin-smoke.cjs
 node scripts/plugin-smoke.cjs --online
 node scripts/windows-smoke.mjs
