@@ -270,7 +270,13 @@ node scripts/windows-smoke.mjs
 
 插件测试验证 CRUD、提醒计划、剪贴资产、会话请求状态、晨报和仓库趋势解析。`--online` 会读取真实 GitHub Trending，账号和桌面 I/O 在该测试中使用模拟宿主。Windows 桌面脚本使用隔离的数据与插件目录，启动 Electron 和 MCP 客户端验证交互。可设置 `NOTCH_TEST_EXE` 指向解包版 Windows 可执行文件，再运行同一脚本验证安装包。
 
-默认石墨主题采用银白与中性深灰，蓝色标记选中与主要操作。半透明层通过原生 Windows 背景模糊与 CSS 材质组合，macOS 使用 vibrancy。Windows 11 22H2 起使用 Acrylic，本机 Windows 10 使用窗口级 DWM blur。系统减少透明度、增强对比度和减少动态效果有对应降级。Apple Design Skill 安装于 `C:\Users\dongz\.codex\skills\apple-design`，本次圆盘设计参考其材质、动效和无障碍规范。
+默认石墨主题采用银白与中性深灰，蓝色标记选中与主要操作。主刘海和剪贴绳窗口在 Windows、macOS 都保持逐像素透明，可见组件使用 CSS 底色、边框和局部材质，不在整块透明窗口上启用原生 Acrylic、DWM blur 或 macOS vibrancy。系统减少透明度、增强对比度和减少动态效果有对应降级。Apple Design Skill 安装于 `C:\Users\dongz\.codex\skills\apple-design`，本次圆盘设计参考其材质、动效和无障碍规范。
+
+### macOS 启动白色置顶矩形修复（2026-11-25）
+
+原实现会在 Mac 的透明主窗口和整屏剪贴绳窗口上启用 `setVibrancy('popover')`。原生材质作用于完整窗口，而 Mac 不支持用 `setShape` 裁去空白区域；即使轮盘已收起，500×620 左右的主窗口仍可能留下浅色矩形，并随刘海保持置顶。现已统一清除这两个窗口的整窗 vibrancy 并重设透明底色，启动 HTML 也在加载样式前声明透明背景。组件自身的底色、圆角、半透明效果及鼠标穿透逻辑继续保留。Electron 的 [vibrancy](https://www.electronjs.org/docs/latest/api/base-window#winsetvibrancytype-macos) 与 [窗口形状](https://www.electronjs.org/docs/latest/api/base-window#winsetshaperects-windows-linux-experimental) 文档说明了这些 API 的作用范围和平台支持。
+
+在 Mac 更新源码后执行 `pnpm install --frozen-lockfile --prod=false`、`pnpm start`；使用安装版时，需重新运行 `pnpm run dist:mac:arm64` 或 `pnpm run dist:mac:x64` 并替换旧应用。更新前先通过菜单栏托盘退出旧实例，避免单实例保护将启动请求转发给旧进程。本修复在 Windows 完成类型检查与生产构建，Mac 原生启动、浅色/深色切换及剪贴绳展开仍需在 Mac 上确认。
 
 
 ## 语言与插件语言规范

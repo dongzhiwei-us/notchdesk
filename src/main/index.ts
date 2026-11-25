@@ -31,8 +31,7 @@ let savedPosition:{x:number;y:number}|undefined
 let floating = false
 let windowDrag:{cursor:Electron.Point;bounds:Electron.Rectangle;timer:ReturnType<typeof setInterval>;moved:boolean}|undefined
 let captureShortcut = ""
-let materialTheme:any = {}, materialKey = ''
-const ropeMaterials=new WeakMap<BrowserWindow,string>()
+let materialTheme:any = {}
 let focusTimer:ReturnType<typeof setTimeout>|undefined
 let groupEngaged=false,focusGrace=0,focusWatcher:ReturnType<typeof spawn>|undefined
 let outsideInputReady=false
@@ -82,23 +81,18 @@ function watchOutsideInput(){
  focusWatcher.on('error',()=>{})
  focusWatcher.on('exit',()=>{outsideInputReady=false})
 }
-function ropeBackdrop(window:BrowserWindow){
- const enabled=materialTheme.material!=='solid'&&!nativeTheme.prefersReducedTransparency&&!nativeTheme.shouldUseHighContrastColors
- if(ropeMaterials.get(window)===String(enabled))return
- ropeMaterials.set(window,String(enabled))
- if(process.platform==='darwin')window.setVibrancy(enabled?'popover':null)
- // Windows Accent blur applies to the full HWND, including transparent pixels
- // outside setShape. Keep glass inside renderer components instead.
+function overlayBackdrop(window:BrowserWindow){
+ // Native vibrancy fills the entire macOS window, including the empty space
+ // around the notch (or the full-screen rope). macOS has no setShape clipping.
+ // Keep these overlays transparent; visible components provide their own material.
+ if(process.platform==='darwin')window.setVibrancy(null)
+ window.setBackgroundColor('#00000000')
 }
 function backdrop(theme:any=materialTheme){
  materialTheme=theme
  if(!main)return
  nativeTheme.themeSource=['dark','light'].includes(theme.mode)?theme.mode:'system'
- const enabled=theme.material!=='solid'&&!nativeTheme.prefersReducedTransparency&&!nativeTheme.shouldUseHighContrastColors
- const key=String(enabled)
- if(materialKey===key)return
- materialKey=key
- if(process.platform==='darwin')main.setVibrancy(enabled?'popover':null)
+ overlayBackdrop(main)
 }
 function anchor(){
  const display=savedPosition?screen.getDisplayNearestPoint(savedPosition):screen.getPrimaryDisplay()
@@ -167,7 +161,7 @@ function applyRects(rects:any){if(!Array.isArray(rects)||!main)return
 }
 const prefs={additionalArguments:['--notch-system-locale='+app.getPreferredSystemLanguages()[0]],preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false,backgroundThrottling:false,spellcheck:false,plugins:true}
 function protect(w:BrowserWindow){w.webContents.setWindowOpenHandler(()=>({action:'deny'}));w.webContents.on('will-navigate',(event,url)=>{if(!url.startsWith(startUrl))event.preventDefault()})}
-rope=clotheslineWindow({url:startUrl,prefs,call,anchor:()=>main?.getBounds()||anchor(),emit,protect,front:()=>main?.moveTop(),context:()=>({notch:main?.getBounds()||anchor(),wheelHeight:floating?312:156}),blur:groupBlur,focus:groupFocus,backdrop:ropeBackdrop,pin:pinned=>emit('clipline.pin',{pinned})})
+rope=clotheslineWindow({url:startUrl,prefs,call,anchor:()=>main?.getBounds()||anchor(),emit,protect,front:()=>main?.moveTop(),context:()=>({notch:main?.getBounds()||anchor(),wheelHeight:floating?312:156}),blur:groupBlur,focus:groupFocus,backdrop:overlayBackdrop,pin:pinned=>emit('clipline.pin',{pinned})})
 async function openSettings(section?:string){if(!settings||settings.isDestroyed()){
  settings=new BrowserWindow({title:'悬屿设置',width:710,height:600,minWidth:470,minHeight:390,show:false,autoHideMenuBar:true,backgroundColor:'#232624',webPreferences:prefs})
  protect(settings);settings.on('closed',()=>{settings=null;main?.setAlwaysOnTop(true,'floating');emit('settings.visibility',false,main)});await settings.loadURL(startUrl+'#settings'+(section?'/'+encodeURIComponent(section):''))}
