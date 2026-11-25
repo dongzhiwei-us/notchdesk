@@ -65,7 +65,10 @@ export function Wheel({plugins,activeId,activationKey,full,select,settings,notic
       const delta=Math.abs(event.deltaX)>Math.abs(event.deltaY)?event.deltaX:event.deltaY;
       if(!delta)return;
       const units=event.deltaMode===1?16:event.deltaMode===2?200:1;
-      const angle=rotationRef.current-Math.max(-30,Math.min(30,delta*units*.25));
+      // macOS scroll deltas already follow the system's natural-scroll setting.
+      // Reverse the previous Mac mapping without changing Windows wheel behavior.
+      const direction=window.notch?.platform==='darwin'?1:-1;
+      const angle=rotationRef.current+direction*Math.max(-30,Math.min(30,delta*units*.25));
       rotationRef.current=angle;
       setRotation(angle);
       clearTimeout(timer.current);
