@@ -197,6 +197,13 @@ async function main() {
   action('vocabulary_review', { id: word.id, result: 'good' });
   assert.equal(action('vocabulary_list').due.some((item) => item.id === word.id), false);
   assert.equal(action('vocabulary_list').reviewed, 1);
+  await action('vocabulary_open', { mode: 'favorites' });
+  assert.ok(opened.itemId.startsWith('favorites:'));
+  const previousOpen = opened.itemId;
+  await action('vocabulary_open', { mode: 'favorites' });
+  assert.notEqual(opened.itemId, previousOpen);
+  await action('trends_open', { source: 'huggingface' });
+  assert.ok(opened.itemId.startsWith('huggingface:'));
 
   const safeRequest = { provider: 'codex', sessionId, title: 'A build needs review', eventId: 'build-001' };
   assert.throws(() => action('attention_request', { ...safeRequest, uri: 'codex://threads/00000000-0000-0000-0000-000000000000' }), /匹配/);

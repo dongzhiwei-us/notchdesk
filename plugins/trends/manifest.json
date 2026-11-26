@@ -1,8 +1,8 @@
 {
   "id": "trends",
-  "name": "仓库趋势",
+  "name": "开源趋势",
   "icon": "trending-up",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "entry": "index.cjs",
   "settings": {
     "defaultPeriod": {

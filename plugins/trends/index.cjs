@@ -7,6 +7,7 @@ const providerSchema = choice('github', 'gitlab');
 const periodSchema = choice('daily', 'weekly', 'monthly');
 const numberFrom = (text) => Number(text.match(/[\d,]+/)?.[0]?.replaceAll(',', '') ?? 0);
 const github = 'https://github.com';
+const { sources: feedSources, loadFeed } = require('./feeds.cjs');
 
 async function loadTrending(period, language) {
   const { load } = require('cheerio');
@@ -54,6 +55,20 @@ function repoCard(item, provider, label) {
 
 module.exports.activate = (ctx) => {
   const inFlight = new Map();
+
+  action(ctx, 'trends_open', '打开 GitHub、Hugging Face 或 claude.dev 趋势界面', { source: choice('github', 'huggingface', 'claude') }, [], ({ source = 'github' }) => ctx.native('ui.open', { view: 'trends', pluginId: 'trends', itemId: source + ':' + record({}).id }));
+
+  action(ctx, 'trends_feed_list', '查询 Hugging Face 热门模型 Top 10 或 claude.dev 最新文章 10 篇，包含来源、抓取时间及缓存状态', { source: choice('huggingface', 'claude'), force: boolean }, ['source'], ({ source, force }) => {
+    const key = 'feed:' + source, previous = ctx.store.get(key, null);
+    if (!force && previous && Date.now() - previous.fetchedAt < (ctx.config().cacheMinutes ?? 20) * 60000) return { ...previous, stale: false };
+    if (inFlight.has(key)) return inFlight.get(key);
+    const task = loadFeed(source).then(result => { ctx.store.set(key, result); return { ...result, stale: false }; })
+      .catch(error => {
+        ctx.log('warn', 'trends.feed_failed', { source, message: error.message });
+        return { source, url: feedSources[source].url, sort: feedSources[source].sort, items: previous?.items ?? [], fetchedAt: previous?.fetchedAt ?? null, stale: !!previous, error: error.message };
+      }).finally(() => inFlight.delete(key));
+    inFlight.set(key, task); return task;
+  });
 
   function trending(period, language, force, cacheMinutes) {
     const key = period + ':' + language;

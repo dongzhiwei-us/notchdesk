@@ -1,0 +1,18 @@
+.trends-workspace { min-width:0; container-type:inline-size; }
+.trends-source-tabs { display:flex; flex:1; }
+.trends-source-tabs button { flex:1; white-space:nowrap; min-height:30px; }
+.trends-page-link { margin:4px 1px 14px; }
+.trends-page-link button { display:inline-flex; gap:5px; align-items:center; font-size:12px; min-height:28px; }
+.trends-github-toolbar { flex-wrap:wrap; }
+.trends-feed .subhead { margin-top:8px; }
+.trends-source-note { font-size:11px; margin:6px 0 14px; }
+.trends-ranked-list { display:grid; }
+.trends-ranked-row { display:flex; align-items:flex-start; gap:12px; padding:14px 0; border-bottom:1px solid var(--divider); }
+.trends-rank { flex:0 0 22px; font-size:12px; color:var(--muted); font-variant-numeric:tabular-nums; line-height:1.7; }
+.trends-ranked-row:nth-child(-n+3) .trends-rank { color:var(--accent); font-weight:650; }
+.trends-ranked-row .row-title { display:block; text-align:left; line-height:1.55; white-space:normal; overflow-wrap:anywhere; }
+.trends-ranked-row .row-title svg { display:inline; vertical-align:middle; flex-shrink:0; }
+.trends-ranked-row .row-meta { display:flex; gap:6px 12px; flex-wrap:wrap; margin-top:5px; font-size:11px; }
+.trends-fetch-time { display:block; margin:14px 0 4px; font-size:11px; }
+.trends-feed .inline-error span { display:block; font-size:11px; overflow-wrap:anywhere; }
+@container (max-width:340px) { .trends-source-tabs button { padding-inline:6px; font-size:11px; } .trends-ranked-row { gap:8px; } }

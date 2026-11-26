@@ -1,7 +1,7 @@
 {
   "name": "notchdesk",
   "productName": "悬屿 NotchDesk",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "private": true,
   "description": "Local-first desktop notch with hot-loadable plugins and MCP",
   "author": "NotchDesk",
@@ -26,7 +26,9 @@
     "pack:mac:x64": "node scripts/package.mjs mac x64 --dir",
     "prepare:mac": "node scripts/runtime.mjs mac all",
     "check:todo": "node scripts/todo-schedule-smoke.mjs",
-    "check:todo:ui": "node scripts/todo-ui-smoke.mjs"
+    "check:todo:ui": "node scripts/todo-ui-smoke.mjs",
+    "check:learning": "node scripts/learning-smoke.mjs",
+    "check:learning:ui": "node scripts/learning-ui-smoke.mjs"
   },
   "engines": {
     "node": ">=24.13.0",

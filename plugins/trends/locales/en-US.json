@@ -44,5 +44,22 @@
   "两项休息提醒同时到期。": "Time to hydrate and take a walk.",
   "今天的工作时间已达到{{kind}}间隔。": "You have reached your {{kind}} interval.",
   "稍后": "Snooze",
-  "跳过本次": "Skip this reminder"
+  "跳过本次": "Skip this reminder",
+  "趋势来源": "Trend source",
+  "打开今日 GitHub Trending": "Open today’s GitHub Trending",
+  "打开 Hugging Face 模型榜": "Open Hugging Face models",
+  "打开 claude.dev": "Open claude.dev",
+  "热门模型 Top 10": "Top 10 trending models",
+  "最新文章 10 篇": "10 latest articles",
+  "按 Hugging Face 热门趋势排序": "Ranked by Hugging Face trending score",
+  "按发布日期倒序，非热度排名": "Newest first, ordered by publication date",
+  "更新失败，正在显示本地缓存。": "Update failed. Showing a local cached copy.",
+  "暂时无法读取来源，请刷新或打开原站。": "Unable to load this source. Refresh or open the website.",
+  "第 {{rank}} 项": "Item {{rank}}",
+  "下载 {{count}}": "{{count}} downloads",
+  "喜欢 {{count}}": "{{count}} likes",
+  "{{count}} 分钟阅读": "{{count}} min read",
+  "更新于 {{time}}": "Updated {{time}}",
+  "缓存": "Cached",
+  "开源趋势": "Open source trends"
 }

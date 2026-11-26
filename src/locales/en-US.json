@@ -95,7 +95,7 @@
   "复用指令与上下文": "Reusable commands and context",
   "词汇": "Vocabulary",
   "收录单词并间隔复习": "Collect words and review over time",
-  "开源趋势": "Trending",
+  "开源趋势": "Trends",
   "跟踪感兴趣的仓库": "Follow repositories you care about",
   "晨间简报": "Morning brief",
   "掌握今天的安排": "Start your day with a plan",
@@ -329,5 +329,7 @@
   "显示在轮盘": "Show in dial",
   "后台运行，通过通知提醒；仍可在此配置。": "Runs in the background with notifications. Configure it here.",
   "在轮盘保留入口，方便随时打开。": "Keep a dial shortcut for quick access.",
-  "在轮盘显示{{value0}}": "Show {{value0}} in dial"
+  "在轮盘显示{{value0}}": "Show {{value0}} in dial",
+  "探索新词，收藏并间隔复习": "Explore, save and review words",
+  "仓库、模型与开发文章": "Repositories, models and developer articles"
 }

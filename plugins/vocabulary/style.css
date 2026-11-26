@@ -1,0 +1,27 @@
+.vocabulary-workspace { container-type:inline-size; }
+.vocabulary-modes { display:flex; flex:1; }
+.vocabulary-modes button { display:flex; justify-content:center; align-items:center; gap:6px; flex:1; min-height:30px; }
+.vocabulary-status { margin:8px 2px 12px; font-size:12px; }
+.vocabulary-card { padding:18px 20px; border:1px solid var(--divider); border-radius:20px; background:var(--surface); animation:vocabulary-appear 160ms ease-out; }
+.vocabulary-card-top { display:flex; align-items:center; justify-content:space-between; gap:8px; }
+.vocabulary-card h2 { margin:16px 0 5px; font-size:30px; line-height:1.15; letter-spacing:-.7px; overflow-wrap:anywhere; }
+.vocabulary-card .vocabulary-phonetic { margin:0 0 18px; color:var(--muted); font-size:14px; font-family:'Segoe UI','SF Pro Text',sans-serif; }
+.vocabulary-definition { font-size:14px; line-height:1.65; margin:0 0 16px; }
+.vocabulary-examples { margin:0; padding-left:22px; }
+.vocabulary-examples li { padding-left:3px; margin:0 0 14px; font-size:13px; line-height:1.65; }
+.vocabulary-examples li::marker { color:var(--muted); font-variant-numeric:tabular-nums; }
+.vocabulary-examples p { margin:3px 0; overflow-wrap:anywhere; }
+.vocabulary-bookmark[aria-pressed=true] { color:var(--accent); }
+.vocabulary-card .icon-button { min-width:30px; min-height:30px; }
+.vocabulary-next { display:flex; justify-content:center; align-items:center; gap:7px; width:100%; margin-top:14px; min-height:32px; }
+.vocabulary-reveal { margin:6px 0 14px; width:100%; min-height:34px; }
+.vocabulary-card .choice-row { display:flex; gap:6px; flex-wrap:wrap; margin-top:18px; }
+.vocabulary-card .choice-row button { flex:1; min-width:58px; min-height:30px; }
+.vocabulary-example-fields { display:grid; gap:8px; padding-top:4px; }
+.vocabulary-favorites { margin-top:14px; }
+.vocabulary-favorites .row[data-selected=true] { background:var(--surface); }
+.vocabulary-favorites .row-content { text-align:left; min-width:0; }
+.vocabulary-footnote { display:block; font-size:11px; line-height:1.6; margin:14px 2px 0; }
+@keyframes vocabulary-appear { from { opacity:.4; transform:translateY(4px); } to { opacity:1; transform:none; } }
+@media (prefers-reduced-motion:reduce) { .vocabulary-card { animation:none; } }
+@container (max-width:340px) { .vocabulary-card { padding:14px; } .vocabulary-modes button { gap:4px; padding-inline:6px; } }

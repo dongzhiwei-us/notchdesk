@@ -46,11 +46,35 @@ pnpm start
 | 待办 | 本地保存、重启恢复。支持开始/结束时间、水平日期时间轴，点击日期或拖选区间新增。详细内容支持 Markdown 编辑/预览，结束时提醒，可完成或稍后提醒。 |
 | 悬挂剪贴 | 手动收录系统剪贴板，或拖入文字和文件。挂件可预览、置顶或写回剪贴板。文件移动后可重新定位原文件引用。 |
 | 文本片段 | 保存命令、Prompt、问题模板和其他常用文字，支持 Markdown 编辑/预览、删除和一键复制 Markdown 原文。 |
-| 词汇复习 | 自带一组开发词汇，可添加自己的词、释义和例句。按记忆结果安排下次复习，并在活动列表留下每日提醒。 |
-| 仓库趋势 | 默认展示当日 GitHub Trending（日榜），支持手动切换周榜、月榜和语言筛选。连接账号后可添加自己关注的 GitHub/GitLab 仓库或组织。 |
+| 词汇复习 | 探索、收藏、复习三种模式。单词同时展示音标、释义及至少两条例句；收藏和复习进度在本机持久保存。 |
+| 开源趋势 | 默认展示当日 GitHub Trending，提供原站按钮；另有 Hugging Face 热门模型 Top 10 和 claude.dev 最新 10 篇文章。保留 GitHub/GitLab 关注来源。 |
 | 开发晨报 | 默认本地时间 10:00 提醒，汇总逾期和当天到点的待办、昨天完成的待办，以及授权账号可见的待审查 PR/MR、分配给自己的 Issue 和昨天的仓库活动。可把仓库建议加入待办，重复采用同一条建议会返回已建待办。首次启用时若当天已过提醒时间，晨报进入活动列表。 |
 | 会话召回 | 接收 MCP 会话请求。通知可打开对应会话、稍后提醒或标记已处理。Codex 通过验证后的会话 UUID 定位。Hermes 使用本机可执行的 `hermes`，Vanish 需提前登记会话跳转模板。 |
 | 喝水走动 | 默认为工作时段内累计活跃 60 分钟提醒喝水，累计 120 分钟提醒走动。两项一起到期时合并。锁屏、离线和长时间无操作会暂停计入，可稍后提醒或暂停当天。 |
+
+### 词汇学习与多来源趋势（0.8.0）
+
+- **探索**：内置 20 个开发与 AI 词汇，离线可用。每词提供 IPA 音标、中英文释义、至少两条原创英文例句及中文译文。每次换词只从未收藏且资料完整的词中选择，同一轮不重复；一轮结束后开始下一轮。收藏当前词后会转到另一个未收藏的词。
+- **收藏**：点击卡片书签收藏，进入「收藏」打开完整词卡、编辑、取消收藏或删除个人词汇。新收录需填写音标、释义和两条不同例句，译文可选；MCP 可提供 2–8 条例句。收藏、例句、探索进度和复习记录保存到本机 SQLite，重启恢复。
+- **复习**：只复习收藏，先回忆，再显示释义和例句，按掌握程度安排下次复习。「重来」约 10 分钟后再出现，其他结果按间隔安排；每日提醒遵循设置中的时间和数量限制。可点击「复习全部收藏」反复回看；当天已完成的词不重复累计每日完成数。取消收藏后不再参与提醒。
+- **旧数据**：保留已有词汇 ID、自定义例句及复习历史，原有词汇作为收藏迁移。能与内置词匹配的记录补齐音标和例句；旧的自定义词若资料不足，卡片提供补全入口，不编造缺失内容。
+- **趋势**：GitHub 默认日榜，并提供直达今日 Trending 的按钮；Hugging Face 从公开模型 API 按 `trendingScore` 降序取前 10；claude.dev 从原站文章列表按发布日期取最新 10 篇，**不是文章热度榜**。各来源可打开原站/条目、手动刷新，显示抓取时间。来源独立缓存；更新失败时显示上次成功结果及提示，首次离线时明确提示无法读取，不填充假数据。无需登录；访问公开来源仍需可用网络。
+
+MCP 新增或扩展：
+
+| 方法 | 参数与用途 |
+|---|---|
+| `vocabulary_list` | 返回 `words`、`favorites`、`due` 和当日复习进度。 |
+| `vocabulary_explore` | `{ "next": true }` 换一个未收藏词；省略 `next` 获取当前探索词。 |
+| `vocabulary_favorite` | `{ "id": "词汇 ID", "favorite": true }` 收藏，`false` 取消。 |
+| `vocabulary_add` | `word`、`phonetic`、`meaning`、`examples: [{text, translation?}, ...]`；可选 `id` 编辑、`meaningEn` 英文释义。兼容旧 `example` 字段，已有完整词条可复用资料。 |
+| `vocabulary_open` | `mode: "explore" / "favorites" / "review"`，默认打开复习。 |
+| `trends_feed_list` | `source: "huggingface" / "claude"`；可选 `force: true` 强制更新。返回条目、来源链接、排序依据、`fetchedAt`、`stale` 及可选错误。 |
+| `trends_open` | `source: "github" / "huggingface" / "claude"`，打开对应趋势页。原 `trends_list` 保留 GitHub 查询语义。 |
+
+`pnpm run check:learning` 使用隔离的真实 HTTP MCP / SQLite，检查迁移、收藏、探索、复习和冷重启恢复，以及来源解析、去重、缓存和断网回退；加 `--online` 验证两个真实网络来源。`pnpm run check:learning:ui` 使用隔离浏览器组件检查词卡、收藏/复习操作、收录表单、外链、十条列表、中英文及窄窗口；不会启动 Electron 或访问正式数据。
+
+0.8.0 同步提升内置插件版本，安装版升级沿用备份与数据保留机制。需重新打包安装版；只更新 UI 文件不会升级已安装的后端插件。
 
 ### 待办日程与 Markdown 内容（0.7.0）
 
@@ -239,13 +263,13 @@ open release
 ```text
 release/
   mac-arm64/
-    NotchDesk-0.7.0-mac-arm64.dmg
-    NotchDesk-0.7.0-mac-arm64.zip
+    NotchDesk-0.8.0-mac-arm64.dmg
+    NotchDesk-0.8.0-mac-arm64.zip
     SHA256SUMS.txt
     build-manifest.json
   mac-x64/
-    NotchDesk-0.7.0-mac-x64.dmg
-    NotchDesk-0.7.0-mac-x64.zip
+    NotchDesk-0.8.0-mac-x64.dmg
+    NotchDesk-0.8.0-mac-x64.zip
     SHA256SUMS.txt
     build-manifest.json
 ```
