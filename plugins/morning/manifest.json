@@ -2,9 +2,15 @@
   "id": "morning",
   "name": "开发晨报",
   "icon": "sun",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "entry": "index.cjs",
   "settings": {
+    "shortcut": {
+      "type": "string",
+      "format": "accelerator",
+      "label": "打开插件快捷键",
+      "default": ""
+    },
     "enabled": {
       "type": "boolean",
       "label": "每日晨报提醒",

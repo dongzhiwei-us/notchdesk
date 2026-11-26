@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ArrowUpRight, Bell, Check, CircleHelp, Code2, Copy, FolderOpen, Github, Gitlab, Layers2, Palette, Plug2, Settings2 } from 'lucide-react';
 import { PluginIcon, PluginLabel, SchemaField, normalizeValues, schemaFields } from './common';
 import { errorMessage, titleOf, type Account, type Plugin, type State, type Theme } from './types';
+import { displayShortcut, type ShortcutStatus } from '../shared/shortcuts';
 const sections = [
     { id: 'appearance', title: tr("外观"), icon: Palette }, { id: 'plugins', title: tr("插件"), icon: Layers2 }, { id: 'notifications', title: tr("通知"), icon: Bell },
     { id: 'accounts', title: tr("账号与来源"), icon: Plug2 }, { id: 'mcp', title: tr("MCP 连接"), icon: Code2 },
@@ -33,9 +34,11 @@ function Appearance({ theme, refresh, feedback }: Pick<SettingsProps, 'refresh' 
     <div className="setting-card"><h3>{tr("主题色")}</h3><div className="palette-grid">{[['graphite', tr("石墨")], ['tide', tr("潮汐")], ['amber', tr("琥珀")]].map(([id, text]) => <button className="palette-choice" data-swatch={id} aria-pressed={theme.palette === id} onClick={() => void update({ palette: id })} key={id}><span className="palette-swatch"/>{tr(text)}{theme.palette === id && <Check size={14}/>}</button>)}</div></div>
   </>;
 }
-function PluginSettings({ plugin, values, refresh, feedback }: {
+function PluginSettings({ plugin, values, refresh, feedback, shortcutStatuses, retry }: {
     plugin: Plugin;
     values: Record<string, unknown>;
+    shortcutStatuses: ShortcutStatus[];
+    retry: () => void;
 } & Pick<SettingsProps, 'refresh' | 'feedback'>) {
     const [open, setOpen] = useState(false);
     const [draft, setDraft] = useState(values);
@@ -63,6 +66,7 @@ function PluginSettings({ plugin, values, refresh, feedback }: {
       {!!Object.keys(fields).length && <button type="button" className="icon-button" aria-label={fmt("配置{{value0}}", { value0: titleOf(plugin) })} title={fmt("配置{{value0}}", { value0: titleOf(plugin) })} onClick={() => setOpen(!open)} aria-expanded={open}><Settings2 size={16}/></button>}
       <button type="button" className="toggle" aria-label={fmt("启用{{value0}}", { value0: titleOf(plugin) })} role="switch" aria-checked={plugin.enabled} disabled={busy} onClick={() => void update('plugins.enable', { id: plugin.id, enabled: !plugin.enabled })}><span /></button></div>
     <div className="plugin-placement"><div><span>{tr('显示在轮盘')}</span><p className="quiet">{plugin.presentation?.wheel===false?tr('后台运行，通过通知提醒；仍可在此配置。'):tr('在轮盘保留入口，方便随时打开。')}</p></div><button type="button" className="toggle" role="switch" aria-label={fmt('在轮盘显示{{value0}}',{value0:titleOf(plugin)})} aria-checked={plugin.presentation?.wheel!==false} disabled={busy} onClick={()=>void update('plugins.presentation',{id:plugin.id,wheel:plugin.presentation?.wheel===false})}><span/></button></div>
+    {shortcutStatuses.filter(binding => binding.pluginId === plugin.id).map(binding => <div className={`shortcut-runtime ${binding.status === 'failed' ? 'inline-error' : 'quiet'}`} key={binding.id} role={binding.status === 'failed' ? 'status' : undefined}><span>{displayShortcut(binding.shortcut, window.notch.platform)} · {binding.status === 'registered' ? tr('全局快捷键已启用') : binding.reason === 'invalid' ? tr('快捷键格式无效') : binding.reason === 'duplicate' ? tr('快捷键与另一个插件冲突') : tr('快捷键被系统或其他应用占用')}</span>{binding.status === 'failed' && <button className="button quiet-button" type="button" onClick={retry}>{tr('重试注册')}</button>}</div>)}
     {open && <form className="editor" onSubmit={async (event) => {
                 event.preventDefault();
                 try {
@@ -200,6 +204,14 @@ function NotificationSettings({ options, refresh, feedback }: Pick<SettingsProps
     <div className="form-actions"><button className="button primary" disabled={busy}>{tr("保存通知设置")}</button></div></form>;
 }
 export function Settings({ state, refresh, feedback, section, standalone }: SettingsProps) {
+    const [shortcutStatuses, setShortcutStatuses] = useState<ShortcutStatus[]>([]);
+    const retryShortcuts = () => { void window.notch.retryShortcuts?.().then(setShortcutStatuses).catch(error => feedback(errorMessage(error), 'error')); };
+    useEffect(() => {
+        let live = true;
+        void window.notch.shortcutStatus?.().then(value => { if (live) setShortcutStatuses(value); }).catch(() => {});
+        const stop = window.notch.onEvent?.(({ type, payload }) => { if (live && type === 'shortcuts.changed') setShortcutStatuses(payload); });
+        return () => { live = false; stop?.(); };
+    }, []);
     const [tab, setTab] = useState(sections.some(item => item.id === section) ? section : 'appearance');
     useEffect(() => {
         if (sections.some(item => item.id === section))
@@ -217,7 +229,7 @@ export function Settings({ state, refresh, feedback, section, standalone }: Sett
                     catch (error) {
                         feedback(errorMessage(error), 'error');
                     }
-                }}><FolderOpen size={15}/>{tr("插件目录")}</button>}</div>{state.plugins.map(plugin => <PluginSettings key={plugin.id} plugin={plugin} values={state.settings[plugin.id]?.values ?? fallbackValues} refresh={refresh} feedback={feedback}/>)}</>}
+                }}><FolderOpen size={15}/>{tr("插件目录")}</button>}</div>{state.plugins.map(plugin => <PluginSettings key={plugin.id} plugin={plugin} values={state.settings[plugin.id]?.values ?? fallbackValues} refresh={refresh} feedback={feedback} shortcutStatuses={shortcutStatuses} retry={retryShortcuts}/>)}</>}
       {tab === 'notifications' && <NotificationSettings options={state.notificationSettings ?? fallbackValues} refresh={refresh} feedback={feedback}/>}
       {tab === 'accounts' && <Accounts refresh={refresh} feedback={feedback}/>}
       {tab === 'mcp' && <Mcp feedback={feedback}/>}

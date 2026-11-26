@@ -388,7 +388,13 @@ class Service {
       host: { online: !!this.host, idleSeconds: this.host?.idleSeconds ?? 0, locked: this.host?.locked ?? false }
     }))
     tool('settings.patch', '更新指定插件的部分设置。', { pluginId: text, values: jsonObject }, ['pluginId', 'values'],
-      (params) => this.plugins.patch(string(params.pluginId, '插件 ID'), object(params.values)))
+      (params) => {
+        const pluginId = string(params.pluginId, '插件 ID'), values = object(params.values)
+        const result = this.plugins.patch(pluginId, values)
+        this.broadcast('settings.changed', { pluginId, fields: Object.keys(values) })
+        return result
+      })
+    tool('shortcuts.status', '查看桌面全局快捷键的注册结果；配置使用 settings.patch 的 shortcut 字段。', {}, [], () => ({ online: !!this.host, bindings: this.storage.get('core', 'shortcutRuntime', []) }))
     tool('locale.list','List supported interface language preferences.',{},[],()=>localeOptions)
     tool('locale.set','Set the interface language for all desktop windows and plugins.',{locale:{enum:localeOptions.map(item=>item.value)}},['locale'],(params)=>this.invoke('theme.set',params,'locale'))
     tool('theme.set', '更新圆盘的停靠位置、明暗、配色与材质。', {
@@ -499,6 +505,22 @@ class Service {
     }, true)
     tool('host.offline', '注销桌面宿主。', {}, [], (params) => {
       if (params.connectionId === undefined || params.connectionId === this.host?.id) this.offline()
+      return { ok: true }
+    }, true)
+    tool('host.shortcuts', '同步全局快捷键的原生注册结果。', {}, [], params => {
+      if (!Array.isArray(params.bindings) || params.bindings.length > 1000) throw new ServiceError('无效快捷键状态。')
+      const bindings = params.bindings.map(value => {
+        const item = object(value), output: Parameters = {}
+        for (const field of ['id','pluginId','field','shortcut','action','accelerator','status','reason']) {
+          if (item[field] !== undefined) { if (typeof item[field] !== 'string' || item[field].length > 200) throw new ServiceError('无效快捷键状态。'); output[field] = item[field] }
+        }
+        return output
+      })
+      const previous = JSON.stringify(this.storage.get('core', 'shortcutRuntime', []))
+      if (previous !== JSON.stringify(bindings)) {
+        this.storage.set('core', 'shortcutRuntime', bindings)
+        for (const binding of bindings.filter(item => item.status === 'failed')) this.storage.log({ level: 'warn', source: 'desktop', event: 'shortcuts.registration_failed', fields: { pluginId: binding.pluginId, code: 'SHORTCUT_' + String(binding.reason || 'unavailable').replaceAll('-', '_').toUpperCase() } })
+      }
       return { ok: true }
     }, true)
     tool('native.reply', '提交桌面操作结果。', {}, [], (params) => {

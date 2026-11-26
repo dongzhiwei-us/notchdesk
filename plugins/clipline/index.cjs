@@ -51,11 +51,13 @@ function publicCard(row) {
 module.exports.activate = (ctx) => {
   const windowState=()=>({pinned:ctx.store.get('windowPinned',false)===true});
   action(ctx,'clip_window_get','读取整条剪贴绳的固定状态，与单个挂件置顶独立',{},[],windowState);
-  action(ctx,'clip_window_set','固定或取消固定整条剪贴绳；固定后失焦保留展示',{pinned:boolean},['pinned'],async({pinned})=>{
+  async function setWindowPin(pinned, reveal = false) {
     ctx.store.set('windowPinned',pinned);
-    try{await ctx.native('ui.clipline_pin',{pinned});return {...windowState(),synced:true};}
+    try{await ctx.native('ui.clipline_pin',{pinned,...(reveal?{reveal:true}:{})});return {...windowState(),synced:true};}
     catch{ctx.log('warn','clipline.pin_sync_deferred');return {...windowState(),synced:false};}
-  });
+  }
+  action(ctx,'clip_window_set','固定或取消固定整条剪贴绳；固定后失焦保留展示',{pinned:boolean},['pinned'],({pinned})=>setWindowPin(pinned));
+  action(ctx,'clip_window_toggle','切换整条剪贴绳的 Pin；reveal=true 时固定并单独展示绳子，不展开圆环',{reveal:boolean},[],({reveal=false})=>setWindowPin(!windowState().pinned,reveal));
   action(ctx,'clip_window_hide','主动收起剪贴绳内容，保留固定偏好，与圆环收起独立',{},[],()=>ctx.native('ui.clipline_hide',{}));
   const defaultLayout = { x: 0.5, y: 0.2, anchor: 'notch' };
   function layout(){

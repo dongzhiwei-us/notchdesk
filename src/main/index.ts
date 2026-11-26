@@ -9,6 +9,8 @@ import {registerProtocols} from './assets'
 import {capture,writeClip} from './clipboard'
 import {accountBroker} from './accounts'
 import {clotheslineWindow} from '../../plugins/clipline/window'
+import {ShortcutRegistry} from './shortcuts'
+import {shortcutBindings, type ShortcutBinding} from '../shared/shortcuts'
 
 const data=dataHome(), packed=app.isPackaged
 const profile=process.env.NOTCH_DATA || !process.env.XDG_DATA_HOME || process.platform!=='win32' ? path.join(data,'desktop') : path.resolve(process.env.XDG_DATA_HOME,'../state/notchdesk/desktop')
@@ -30,7 +32,15 @@ const call=async(method:string,params:any={})=>{if(!c)throw Error('服务连接�
 let savedPosition:{x:number;y:number}|undefined
 let floating = false
 let windowDrag:{cursor:Electron.Point;bounds:Electron.Rectangle;timer:ReturnType<typeof setInterval>;moved:boolean}|undefined
-let captureShortcut = ""
+let shortcutRecordingOwner:{id:number;token:string}|undefined
+let shortcutSync=Promise.resolve()
+const shortcuts=new ShortcutRegistry(globalShortcut,process.platform,async(binding:ShortcutBinding)=>{
+ try{
+  if(binding.action==='capture')await captureToLine()
+  else if(binding.action==='pin')await call('clip_window_toggle',{reveal:true})
+  else await call('ui.activate',{pluginId:binding.pluginId,reason:'shortcut'})
+ }catch(error){emit('shell.error',String((error as Error).message),main)}
+},bindings=>{emit('shortcuts.changed',bindings);void call('host.shortcuts',{bindings}).catch(()=>{})})
 let materialTheme:any = {}
 let focusTimer:ReturnType<typeof setTimeout>|undefined
 let groupEngaged=false,focusGrace=0,focusWatcher:ReturnType<typeof spawn>|undefined
@@ -136,15 +146,20 @@ async function captureToLine(){
  try{await call('clip_capture');emit('clip.captured',{});main?.show();main?.focus()}
  catch(error){emit('shell.error',String((error as Error).message),main)}
 }
-async function syncShortcut(){
- const state=await call('state.get')
- const enabled=state.plugins.some((plugin:any)=>plugin.id==='clipline'&&plugin.enabled)
- if(!enabled)rope?.hide()
- const next=enabled?String(state.settings.clipline?.values.captureShortcut||'CommandOrControl+Alt+V'):''
- if(next===captureShortcut)return
- if(captureShortcut)globalShortcut.unregister(captureShortcut)
- captureShortcut=''
- if(next){try{if(globalShortcut.register(next,()=>void captureToLine()))captureShortcut=next;else emit('shell.error','Clipboard shortcut is already in use',main)}catch{emit('shell.error','Invalid clipboard shortcut',main)}}
+function syncShortcut(force=false){
+ shortcutSync=shortcutSync.catch(()=>{}).then(async()=>{
+  if(quitting||shortcutRecordingOwner!==undefined)return
+  const state=await call('state.get')
+  if(quitting||shortcutRecordingOwner!==undefined)return
+  if(!state.plugins.some((plugin:any)=>plugin.id==='clipline'&&plugin.enabled))rope?.hide()
+  shortcuts.sync(shortcutBindings(state),force)
+ })
+ return shortcutSync
+}
+function finishShortcutRecording(owner?:number,token?:string){
+ if(shortcutRecordingOwner===undefined||(owner!==undefined&&owner!==shortcutRecordingOwner.id)||(token!==undefined&&token!==shortcutRecordingOwner.token))return
+ shortcutRecordingOwner=undefined;globalShortcut.setSuspended(false)
+ if(!quitting)void syncShortcut(true).catch(()=>{})
 }
 function pointer(){if(!main||main.isDestroyed()||windowDrag)return;const bounds=main.getBounds(),cursor=screen.getCursorScreenPoint(),x=cursor.x-bounds.x,y=cursor.y-bounds.y
  const ropeHit=rope?.hit(cursor)||false
@@ -160,7 +175,7 @@ function applyRects(rects:any){if(!Array.isArray(rects)||!main)return
  pointer()
 }
 const prefs={additionalArguments:['--notch-system-locale='+app.getPreferredSystemLanguages()[0]],preload:path.join(__dirname,'preload.cjs'),contextIsolation:true,sandbox:true,nodeIntegration:false,backgroundThrottling:false,spellcheck:false,plugins:true}
-function protect(w:BrowserWindow){w.webContents.setWindowOpenHandler(()=>({action:'deny'}));w.webContents.on('will-navigate',(event,url)=>{if(!url.startsWith(startUrl))event.preventDefault()})}
+function protect(w:BrowserWindow){const id=w.webContents.id;w.webContents.setWindowOpenHandler(()=>({action:'deny'}));w.webContents.on('will-navigate',(event,url)=>{if(!url.startsWith(startUrl))event.preventDefault()});const finish=()=>finishShortcutRecording(id);w.on('blur',finish);w.on('hide',finish);w.on('closed',finish)}
 rope=clotheslineWindow({url:startUrl,prefs,call,anchor:()=>main?.getBounds()||anchor(),emit,protect,front:()=>main?.moveTop(),context:()=>({notch:main?.getBounds()||anchor(),wheelHeight:floating?312:156}),blur:groupBlur,focus:groupFocus,backdrop:overlayBackdrop,pin:pinned=>emit('clipline.pin',{pinned})})
 async function openSettings(section?:string){if(!settings||settings.isDestroyed()){
  settings=new BrowserWindow({title:'悬屿设置',width:710,height:600,minWidth:470,minHeight:390,show:false,autoHideMenuBar:true,backgroundColor:'#232624',webPreferences:prefs})
@@ -228,7 +243,7 @@ const adapterPath=path.join(data,'session-adapters.json')
 function adapters():Record<string,string>{try{return JSON.parse(fs.readFileSync(adapterPath,'utf8'))}catch{return {}}}
 async function nativeCall(method:string,p:any={}):Promise<any>{
  switch(method){
- case 'ui.clipline_pin':rope?.setPinned(p.pinned===true);if(p.pinned===true)emit('shell.editing',false,main);else if(view.view!=='clipline')rope?.hide();return {pinned:p.pinned===true}
+ case 'ui.clipline_pin':rope?.setPinned(p.pinned===true);if(p.pinned===true){emit('shell.editing',false,main);if(p.reveal===true)try{await rope?.show()}catch(error){rope?.hide();throw error}}else if(view.view!=='clipline')rope?.hide();return {pinned:p.pinned===true}
  case 'ui.clipline_hide':rope?.hide();if(view.view==='clipline')emit('open',{view:'closed'},main);return {hidden:true}
  case 'clipboard.capture':return capture()
  case 'clipboard.write':{const result=await writeClip(p);emit('action.completed',{method},main);return result}
@@ -236,7 +251,7 @@ async function nativeCall(method:string,p:any={}):Promise<any>{
  case 'accounts.list':return account.list()
  case 'files.pick':return files()
  case 'file.open':{const file=p.path;if(!path.isAbsolute(file)||!fs.statSync(file).isFile())throw Error('文件已移动');if(!/\.(pdf|txt|md|png|jpg|jpeg|gif|webp|mp4|webm|mov|html?)$/i.test(file))throw Error('此文件类型请从文件管理器打开');const result=await shell.openPath(file);if(result)throw Error(result);emit('action.completed',{method},main);return{ok:true}}
- case 'ui.open':if(p.view==='settings')return openSettings(p.section);else{if(p.view!=='closed'){focusGrace=Date.now()+500;const focused=BrowserWindow.getFocusedWindow();groupEngaged=focused===main||!!rope?.owns(focused)}if(p.view!=='closed'&&settings?.isVisible()){settings.hide();main?.setAlwaysOnTop(true,'floating');emit('settings.visibility',false,main)}main?.showInactive();if(p.activationId)emit('plugin.activated',p);emit('open',p,main);return{dispatched:true}}
+ case 'ui.open':if(p.view==='settings')return openSettings(p.section);else{if(p.view!=='closed'){focusGrace=Date.now()+500;const focused=BrowserWindow.getFocusedWindow();groupEngaged=focused===main||!!rope?.owns(focused)}if(p.view!=='closed'&&settings?.isVisible()){settings.hide();main?.setAlwaysOnTop(true,'floating');emit('settings.visibility',false,main)}if(p.reason==='shortcut'){main?.show();main?.focus();groupFocus()}else main?.showInactive();if(p.activationId)emit('plugin.activated',p);emit('open',p,main);return{dispatched:true}}
  case 'ui.snapshot':return {...view,bounds:main?.getBounds(),settingsOpen:!!settings,rope:rope?.info(),outsideInputReady:process.platform!=='win32'||outsideInputReady}
  case 'session.adapters':return {codex:true,hermes:true,...adapters()}
  case 'session.register':{const t=String(p.template||'');if(p.provider!=='vanish'||!t.includes('{sessionId}')||(!/^vanish:\/\//.test(t)&&!/^https:\/\//.test(t)))throw Error('需要含 {sessionId} 的 HTTPS 或 vanish 链接');new URL(t.replace('{sessionId}','id'));await fsp.writeFile(adapterPath,JSON.stringify({...adapters(),vanish:t}));return{registered:true}}
@@ -253,6 +268,7 @@ async function nativeCall(method:string,p:any={}):Promise<any>{
 function bindIPC(){
  const allowed=(e:Electron.IpcMainInvokeEvent|Electron.IpcMainEvent)=>e.senderFrame?.url.startsWith(startUrl)&&e.senderFrame===e.sender.mainFrame
  const api:Record<string,(...p:any[])=>any>={
+ shortcutStatus:()=>shortcuts.snapshot(),retryShortcuts:async()=>{await syncShortcut(true);return shortcuts.snapshot()},
  ropeMoving:(active:boolean)=>rope?.setMoving(!!active),
  rpc:(method,p)=>{if(typeof method!=='string'||/^(host\.|native\.|clip_resolve$)/.test(method))throw Error('专用宿主接口');if(!c)throw Error('服务连接中');return rpc({...c,token:c.rendererToken||c.token},method,p,'ui')},
  captureClip:captureToLine,beginMove,endMove,prepareClipDrag:prepareDrag,ropeInfo:()=>rope?.info(),ropeReposition:()=>(view.view==='clipline'||rope?.visible())&&!settings?.isVisible()?rope?.show(view.view==='clipline'?view.itemId:undefined):undefined,ropeEditing:(active:boolean)=>{rope?.setEditing(!!active);emit('shell.editing',!!active&&!rope?.isPinned(),main)},settings:openSettings,pick:files,external:async(url)=>{settings?.setAlwaysOnTop(false);await shell.openExternal(safeUrl(url));emit('action.completed',{method:'external'},main)},folder:()=>plugins,openFolder:()=>shell.openPath(plugins),
@@ -261,6 +277,7 @@ function bindIPC(){
  mcp:()=>{if(!c?.mcpToken)throw Error('MCP server is connecting');return {url:'http://127.0.0.1:'+c.port+'/mcp',headers:{Authorization:'Bearer '+c.mcpToken}}}
  }
  for(const [name,fn] of Object.entries(api))ipcMain.handle('notch:'+name,(e,...p)=>{if(!allowed(e))throw Error('仅允许悬屿应用发起此操作');return fn(...p)})
+ ipcMain.handle('notch:shortcutRecording',(e,active,token='default')=>{if(!allowed(e)||typeof active!=='boolean'||typeof token!=='string'||token.length>160)throw Error('无效录入请求');if(active){shortcutRecordingOwner={id:e.sender.id,token};globalShortcut.setSuspended(true)}else finishShortcutRecording(e.sender.id,token);return {recording:shortcutRecordingOwner?.id===e.sender.id&&shortcutRecordingOwner.token===token}})
  ipcMain.on('notch:dragClip',(e,id,requestId)=>{if(!allowed(e)||typeof id!=='string'||!Number.isSafeInteger(requestId))return;void dragClip(e.sender,id).then(result=>{if(!e.sender.isDestroyed())e.sender.send('notch:dragDone',{...result,requestId})},error=>{if(!e.sender.isDestroyed())e.sender.send('notch:dragDone',{error:String(error.message),requestId})})})
  ipcMain.on('notch:hit',(e,rects)=>{if(!allowed(e))return;if(e.sender===main?.webContents)applyRects(rects);else if(rope?.accepts(e.sender.id))rope.shape(rects)})
  ipcMain.on('notch:state',(e,state)=>{if(allowed(e)&&e.sender===main?.webContents){const reopen=state.view!==view.view||state.itemId!==view.itemId||!rope?.visible();view=state;if(state.view==='clipline'&&!settings?.isVisible()){if(reopen)void rope?.show(state.itemId).catch(error=>emit('shell.error',String(error.message),main));}else if(!rope?.isPinned())rope?.hide()}})
@@ -271,6 +288,7 @@ async function stream(){
   await watch(c,event=>{
    if(event.type==='connected'){void call('host.online',{connectionId:event.payload.id,idleSeconds:powerMonitor.getSystemIdleTime(),locked,systemLocale:app.getPreferredSystemLanguages()[0]}).then(()=>call('state.get')).then(s=>{place(s.theme);emit('server.ready',{})}).catch(()=>{});return}
    if(event.type==='changed')void syncShortcut().catch(()=>{})
+   if(event.type==='settings.changed'&&event.payload.fields?.some((key:string)=>['shortcut','captureShortcut'].includes(key)))void syncShortcut(true).catch(()=>{})
    if(event.type==='theme.changed')place(event.payload)
    if(event.type==='native'){const {id,method,params}=event.payload;void nativeCall(method,params).then(result=>call('native.reply',{id,result}),error=>call('native.reply',{id,error:String(error.message)})).catch(()=>{});return}
    emit(event.type,event.payload)
@@ -324,7 +342,7 @@ async function boot(){
 if(!app.requestSingleInstanceLock())app.quit()
 else{
  app.on('second-instance',()=>nativeCall('ui.open',{view:'menu'}));app.whenReady().then(boot).catch(err=>{console.error(err);dialog.showErrorBox('悬屿启动失败',err.message);app.quit()})
- app.on('before-quit',()=>{quitting=true;focusWatcher?.kill();clearTimeout(focusTimer);globalShortcut.unregisterAll();if(windowDrag)clearInterval(windowDrag.timer);stop.abort();if(c)void call('host.offline').catch(()=>{})})
+ app.on('before-quit',()=>{quitting=true;finishShortcutRecording();shortcuts.dispose();focusWatcher?.kill();clearTimeout(focusTimer);globalShortcut.unregisterAll();if(windowDrag)clearInterval(windowDrag.timer);stop.abort();if(c)void call('host.offline').catch(()=>{})})
  app.on('window-all-closed',()=>{})
 }
 

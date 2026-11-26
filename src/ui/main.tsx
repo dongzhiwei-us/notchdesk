@@ -1,12 +1,12 @@
 import { applyLocale, currentLocale, subscribeLocale } from './i18n';
 import { tr, fmt } from './i18n';
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type DragEvent } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore, type DragEvent } from 'react';
 import { createRoot } from 'react-dom/client';
 import { ArrowLeft, Bell, BellRing, ChevronDown, CircleAlert, CircleCheck, Pin, PinOff, Settings2, Sparkles, X } from 'lucide-react';
 import { panels } from '../../plugins/panels';
 import { DataTree, Empty, IconButton } from './primitives';
 import { GenericPanel, PluginIcon, PluginLabel, RuntimePanel } from './common';
-import { Settings } from './settings';
+const Settings = lazy(() => import('./settings').then(module => ({ default: module.Settings })));
 import { detailOf, errorMessage, fallbackState, formatTime, titleOf, type Notice, type Plugin, type State, type Tool } from './types';
 import './style.css';
 import { Wheel } from './Wheel';
@@ -381,7 +381,7 @@ function App() {
     function openNotices() { pin(true); void go({ kind: 'notice' }, 'select'); }
     function openSettings() { hide();Promise.resolve(window.notch?.openSettings()).catch(error => feedback(errorMessage(error), 'error')); }
     if (standalone)
-        return <main className="settings-page theme" {...theme}><Settings state={state} refresh={refresh} section={settingsSection} feedback={feedback} standalone/>{toast}</main>;
+        return <main className="settings-page theme" {...theme}><Suspense fallback={<div className="plugin-loading" role="status" aria-label={tr('正在读取')}><i/><i/><i/></div>}><Settings state={state} refresh={refresh} section={settingsSection} feedback={feedback} standalone/></Suspense>{toast}</main>;
     const panelProps = { revision, feedback, itemId: displayView.kind === 'plugin' ? displayView.itemId : undefined, edit: (active: boolean) => {
             if (current.current.kind !== 'closed')
                 editing.current = active;

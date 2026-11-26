@@ -2,9 +2,15 @@
   "id": "clipline",
   "name": "悬挂剪贴",
   "icon": "paperclip",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "entry": "index.cjs",
   "settings": {
+    "shortcut": {
+      "type": "string",
+      "format": "accelerator",
+      "label": "固定/取消固定快捷键",
+      "default": "Control+Alt+Super+P"
+    },
     "copyFiles": {
       "type": "boolean",
       "label": "把较小文件另存到应用中",
@@ -12,6 +18,7 @@
     },
     "captureShortcut": {
       "type": "string",
+      "format": "accelerator",
       "label": "上绳快捷键",
       "default": "CommandOrControl+Alt+V"
     }

@@ -2,9 +2,16 @@
   "id": "snippets",
   "name": "文本片段",
   "icon": "braces",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "entry": "index.cjs",
-  "settings": {},
+  "settings": {
+    "shortcut": {
+      "type": "string",
+      "format": "accelerator",
+      "label": "打开插件快捷键",
+      "default": ""
+    }
+  },
   "locales": {
     "zh-CN": "locales/zh-CN.json",
     "en-US": "locales/en-US.json"

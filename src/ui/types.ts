@@ -91,6 +91,9 @@ export interface Account {
 }
 
 export interface Host {
+  shortcutRecording?(active: boolean, token?: string): Promise<unknown>;
+  shortcutStatus?(): Promise<import('../shared/shortcuts').ShortcutStatus[]>;
+  retryShortcuts?(): Promise<import('../shared/shortcuts').ShortcutStatus[]>;
   captureClip():Promise<void>;
   beginMove():Promise<void>;
   endMove():Promise<{moved:boolean}>;

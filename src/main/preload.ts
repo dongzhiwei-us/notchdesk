@@ -4,6 +4,7 @@ let dragRequest=0
 contextBridge.exposeInMainWorld('notch',{
  systemLocale:process.argv.find(arg=>arg.startsWith('--notch-system-locale='))?.split('=')[1] || 'en-US',
  platform:process.platform,
+ shortcutRecording:(active:boolean,token?:string)=>call('shortcutRecording',active,token),shortcutStatus:()=>call('shortcutStatus'),retryShortcuts:()=>call('retryShortcuts'),
  rpc:(method:string,params:any={})=>call('rpc',method,params),
  onEvent:(fn:(event:any)=>void)=>{const listener=(_:unknown,event:any)=>fn(event);ipcRenderer.on('notch:event',listener);return ()=>ipcRenderer.removeListener('notch:event',listener)},
  captureClip:()=>call('captureClip'),

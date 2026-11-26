@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { randomUUID } from 'node:crypto'
 import { isAbsolute, join, relative, resolve, sep } from 'node:path'
 import {resolveLocale,supportedLocales} from '../shared/locales'
+import { normalizeShortcut, pluginShortcutField, resolveShortcut, shortcutBindings } from '../shared/shortcuts'
 import Ajv, { type ValidateFunction } from 'ajv'
 import { watch } from 'chokidar'
 import { object, ServiceError, string, type Notice, type Storage } from './storage'
@@ -65,7 +66,11 @@ function checkSetting(field: Setting, value: unknown) {
       return typeof value === 'number' && Number.isFinite(value)
         && value >= (field.min ?? -Infinity) && value <= (field.max ?? Infinity)
     case 'boolean': return typeof value === 'boolean'
-    case 'string': return typeof value === 'string' && value.length <= 100_000
+    case 'string': {
+      if (typeof value !== 'string' || value.length > 100_000) return false
+      if (field.format === 'accelerator') { try { normalizeShortcut(value); } catch { return false } }
+      return true
+    }
     case 'time': return typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value)
     case 'select': return typeof value === 'string' && field.options?.includes(value)
     default: return false
@@ -86,6 +91,8 @@ function loadManifest(dir: string): Manifest {
     if (!checkSetting(field, field.default)) throw new ServiceError('无效的设置默认值。')
     settings[key] = field
   }
+  // Host-owned field: every hot-loaded plugin receives the same shortcut contract.
+  settings.shortcut = pluginShortcutField(id)
   return {
     id, name: string(raw.name, '插件名称'), icon: string(raw.icon ?? 'sparkles', '插件图标'),
     version: string(raw.version ?? '0.1.0', '插件版本'), entry: string(raw.entry ?? 'index.cjs', '插件入口'),
@@ -384,8 +391,9 @@ export class Plugins {
     for (const [key, value] of Object.entries(values)) {
       const field = plugin.manifest.settings[key]
       if (!field || !checkSetting(field, value)) throw new ServiceError('无效的插件设置。')
-      current[key] = value
+      current[key] = field.format === 'accelerator' ? normalizeShortcut(value) : value
     }
+    this.validateShortcuts(id, current)
     this.services.storage.set('settings', id, current)
     this.services.changed()
     return { values: current }
@@ -395,6 +403,7 @@ export class Plugins {
     return this.enqueue(async () => {
       const plugin = this.find(id)
       if (enabled !== !!plugin.runtime?.live) {
+        if (enabled) this.validateShortcuts(id, this.configuration(plugin), true)
         if (enabled) plugin.runtime = await this.activate(plugin, plugin)
         this.services.storage.set('core', `enabled:${id}`, enabled)
         if (!enabled) {
@@ -406,6 +415,18 @@ export class Plugins {
       }
       return { id, enabled }
     })
+  }
+
+  private validateShortcuts(id: string, values: Parameters, enable = false) {
+    const state = this.state()
+    state.settings[id] = { values }
+    if (enable) state.plugins = state.plugins.map(plugin => plugin.id === id ? { ...plugin, enabled: true } : plugin)
+    const claimed = new Set<string>()
+    for (const binding of shortcutBindings(state)) {
+      const accelerator = resolveShortcut(binding.shortcut, process.platform)
+      if (claimed.has(accelerator)) throw new ServiceError('快捷键与另一个插件或上绳快捷键冲突。')
+      claimed.add(accelerator)
+    }
   }
 
   setPresentation(id:string,wheel:boolean){

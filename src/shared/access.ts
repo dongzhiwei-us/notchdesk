@@ -5,7 +5,7 @@ export function groupFor(name:string){
  if(/^(clip_capture|clip_copy|clip_copy_path|clip_copy_text|snippets_copy)$/.test(name))return 'clipboard'
  if(/^(clip_|files\.)/.test(name))return 'files'
  if(/^(ui\.|attention_open|session\.)/.test(name))return 'desktop'
- if(/^(settings\.|locale\.|theme\.|plugins\.|logs\.|accounts\.|shared\.)/.test(name))return 'administration'
+ if(/^(settings\.|shortcuts\.|locale\.|theme\.|plugins\.|logs\.|accounts\.|shared\.)/.test(name))return 'administration'
  return 'workspace'
 }
 export function permissions(dir:string):string[]{

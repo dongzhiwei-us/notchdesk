@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BellRing, BookOpenText, Code2, ListTodo, Paperclip, Puzzle, Sparkles, Sunrise, TrendingUp, Waves } from 'lucide-react';
 import { DataTree, Empty, usePanelDraft, type PanelProps } from './primitives';
 import { detailOf, errorMessage, titleOf, type Plugin, type Schema, type Tool } from './types';
+import { ShortcutInput } from './ShortcutInput';
 const pluginIcons = {
     todo: ListTodo, clipline: Paperclip, snippets: Code2, vocabulary: BookOpenText,
     trends: TrendingUp, morning: Sunrise, attention: BellRing, wellness: Waves,
@@ -41,7 +42,8 @@ export function SchemaField({ name, field, value, set, required }: {
     required?: boolean;
 }) {
     const kind = Array.isArray(field.type) ? field.type.find(type => type !== 'null') : field.type;
-    const caption = field.title || field.label || name;
+    const caption = tr(field.title || field.label || name);
+    if (field.format === 'accelerator') return <ShortcutInput label={tr(caption)} value={String(value ?? '')} defaultValue={String(field.default ?? '')} set={set}/>;
     if (kind === 'boolean')
         return <label className="checkbox-field"><input type="checkbox" checked={Boolean(value)} onChange={event => set(event.target.checked)}/><span>{caption}{field.description && <small>{field.description}</small>}</span></label>;
     let control: ReactNode;

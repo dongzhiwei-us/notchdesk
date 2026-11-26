@@ -2,9 +2,15 @@
   "id": "wellness",
   "name": "喝水走动",
   "icon": "heart-pulse",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "entry": "index.cjs",
   "settings": {
+    "shortcut": {
+      "type": "string",
+      "format": "accelerator",
+      "label": "打开插件快捷键",
+      "default": ""
+    },
     "enabled": {
       "type": "boolean",
       "label": "提醒休息",

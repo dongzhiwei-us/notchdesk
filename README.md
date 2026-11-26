@@ -52,6 +52,40 @@ pnpm start
 | 会话召回 | 接收 MCP 会话请求。通知可打开对应会话、稍后提醒或标记已处理。Codex 通过验证后的会话 UUID 定位。Hermes 使用本机可执行的 `hermes`，Vanish 需提前登记会话跳转模板。 |
 | 喝水走动 | 默认为工作时段内累计活跃 60 分钟提醒喝水，累计 120 分钟提醒走动。两项一起到期时合并。锁屏、离线和长时间无操作会暂停计入，可稍后提醒或暂停当天。 |
 
+### 插件全局快捷键与剪贴绳快速 Pin（0.11.0）
+
+每个插件在「设置 → 插件 → 配置」都有一个全局快捷键。**默认全部留空，仅剪贴绳默认启用 Pin 切换：**
+
+| 系统 | 剪贴绳固定 / 取消固定 |
+|---|---|
+| macOS | `Ctrl + Option + Command + P`（`⌃⌥⌘P`） |
+| Windows | `Ctrl + Alt + Win + P` |
+
+统一保存为 Electron accelerator `Control+Alt+Super+P`：`Alt` 映射到 macOS Option，`Super` 映射到 macOS Command / Windows Win。普通插件配置快捷键后打开该插件；剪贴绳配置后固定/取消固定**整条绳子**。固定时可单独展示绳子，圆环不被强制展开或常驻；圆环收起后挂件仍可正常交互。取消固定后恢复原有失焦收起规则，不影响单个挂件的置顶状态。
+
+剪贴绳原有「上绳快捷键」独立保留：macOS 默认 Command+Option+V，Windows 默认 Ctrl+Alt+V。两种操作都可修改或清空，空字符串明确表示停用，不会自动回退成默认值。
+
+快捷键输入支持「录入」后直接按组合键，也支持清空、恢复默认；**点击保存设置后生效**。录入期间只暂停本应用的全局快捷键，等组合键释放后恢复，避免录入 Pin 组合键时误触；取消、焦点移出、窗口关闭和表单卸载同样恢复。Mac 显示修饰键符号，Windows 显示 Ctrl/Alt/Win 文本。设置页按需加载，不占用刘海首次展开的设置界面加载成本。
+
+配置按插件保存在 SQLite，重启恢复；启用/停用、修改配置、复制插件目录热加载或卸载时同步注册/释放。内部采用差量更新，普通任务数据刷新不反复注册快捷键。应用内重复组合键在保存或重新启用时拒绝；被系统或其他应用占用时在设置中显示失败，可换键或重试注册，不会静默宣称已生效。注册失败按统一日志记录插件 ID 与错误码，不记录敏感配置。
+
+SDK 对所有插件注入一个宿主管理的 `settings.shortcut` 字符串字段（`format: "accelerator"`）。它是保留字段，普通插件默认 `""`；内置插件也在 manifest 中显式声明，便于分发和兼容。第三方热加载插件无需手写该字段，后台核心会自动补齐；字段的动作由宿主统一处理，不占用插件轮盘槽位。
+
+RPC 配置与 MCP 均可管理：
+
+```json
+{
+  "pluginId": "clipline",
+  "values": { "shortcut": "Control+Alt+Super+P" }
+}
+```
+
+将参数传给 RPC `settings.patch` / MCP `settings_patch`；普通插件换成对应 ID，传 `"shortcut": ""` 清空。`shortcuts.status` / MCP `shortcuts_status` 返回桌面在线状态和实际注册结果；这些配置/查询遵循现有 administration 权限。`clip_window_toggle({"reveal":true})` 通过统一持久状态切换 Pin，固定时独立展示绳子；原 `clip_window_get/set` 保留兼容。
+
+本次涉及后台核心更新，升级时需重新构建安装包，并重启应用及其常驻后台服务；仅替换 UI 文件不够，仍连接旧后台时无法获得新核心的字段注入、冲突校验和注册状态接口。数据保留，勿删除数据目录。
+
+`pnpm run check:shortcuts` 在隔离 HTTP MCP/SQLite 中检查默认值、冲突、清空、持久化、插件热加载和卸载；加 `--native` 使用独立 Electron 验证本机原生注册/暂停/释放，不创建窗口、不触发真实业务操作。`pnpm run check:shortcuts:ui` 验证按键录入、释放时恢复、取消/卸载恢复、清空、默认值和中英文系统显示。
+
 ### 待办的天/小时精度与自定义标签（0.10.0）
 
 时间轴新增可拖动、点击或用键盘左右键操作的「天 / 小时」滑块：天视图展示一周，小时视图展示某一天，可横向滚动、前后切日或选择日期。两种视图都支持点击刻度与拖选区间新增。视图偏好保存在本机，重启恢复，并可由 MCP 控制。**切换视图只改变展示，不改动已有任务时间。**
@@ -328,13 +362,13 @@ open release
 ```text
 release/
   mac-arm64/
-    NotchDesk-0.10.0-mac-arm64.dmg
-    NotchDesk-0.10.0-mac-arm64.zip
+    NotchDesk-0.11.0-mac-arm64.dmg
+    NotchDesk-0.11.0-mac-arm64.zip
     SHA256SUMS.txt
     build-manifest.json
   mac-x64/
-    NotchDesk-0.10.0-mac-x64.dmg
-    NotchDesk-0.10.0-mac-x64.zip
+    NotchDesk-0.11.0-mac-x64.dmg
+    NotchDesk-0.11.0-mac-x64.zip
     SHA256SUMS.txt
     build-manifest.json
 ```

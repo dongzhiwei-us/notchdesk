@@ -2,9 +2,15 @@
   "id": "trends",
   "name": "开源趋势",
   "icon": "trending-up",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "entry": "index.cjs",
   "settings": {
+    "shortcut": {
+      "type": "string",
+      "format": "accelerator",
+      "label": "打开插件快捷键",
+      "default": ""
+    },
     "archiveEnabled": {
       "type": "boolean",
       "label": "每天自动保存公开趋势文档",

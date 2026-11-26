@@ -57,6 +57,7 @@ jobs:
       - run: pnpm run check:todo
       - run: pnpm run check:learning
       - run: pnpm run check:trends:archive
+      - run: pnpm run check:shortcuts
       - uses: actions/upload-artifact@v4
         with:
           name: NotchDesk-mac-${{ matrix.arch }}
@@ -97,6 +98,7 @@ jobs:
       - run: pnpm run check:todo
       - run: pnpm run check:learning
       - run: pnpm run check:trends:archive
+      - run: pnpm run check:shortcuts
       - uses: actions/upload-artifact@v4
         with:
           name: NotchDesk-win-${{ matrix.arch }}

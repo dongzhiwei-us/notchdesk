@@ -2,9 +2,15 @@
   "id": "todo",
   "name": "待办",
   "icon": "list-todo",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "entry": "index.cjs",
   "settings": {
+    "shortcut": {
+      "type": "string",
+      "format": "accelerator",
+      "label": "打开插件快捷键",
+      "default": ""
+    },
     "reminders": {
       "type": "boolean",
       "label": "提醒到期任务",
