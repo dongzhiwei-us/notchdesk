@@ -52,6 +52,46 @@ pnpm start
 | 会话召回 | 接收 MCP 会话请求。通知可打开对应会话、稍后提醒或标记已处理。Codex 通过验证后的会话 UUID 定位。Hermes 使用本机可执行的 `hermes`，Vanish 需提前登记会话跳转模板。 |
 | 喝水走动 | 默认为工作时段内累计活跃 60 分钟提醒喝水，累计 120 分钟提醒走动。两项一起到期时合并。锁屏、离线和长时间无操作会暂停计入，可稍后提醒或暂停当天。 |
 
+### 每日趋势文档与历史归档（0.9.0）
+
+开源趋势默认在**系统本地时间每天 10:00**自动保存三个公开来源。设置 → 开源趋势可关闭自动保存或修改时间；服务持续运行时后台执行，不依赖打开趋势面板。错过当天时间后，下次启动服务会补采当天；程序未运行期间的过去日期没有真实快照，**不会用今天的结果冒充历史数据**。无需启动额外 Codex 定时任务。
+
+每次归档包含 GitHub 不限语言的日榜、Hugging Face 热门模型前 10 和 claude.dev 最新文章 10 篇。每条包含名称/标题、介绍、详情链接和来源元数据；介绍优先使用仓库描述、模型卡开头或原站页面摘要。抓取介绍失败时明确标注为元数据替代，不生成猜测性内容。仅归档公开榜单，不导出关注源中的私有仓库、账号信息或凭据。
+
+默认目录：
+
+- 本机 Windows：`D:\environments\data\NotchDesk\assets\trends\archives`
+- macOS：`~/Library/Application Support/NotchDesk/assets/trends/archives`
+- 自定义 `NOTCH_DATA`：`<NOTCH_DATA>/assets/trends/archives`
+
+```text
+archives/
+  index.md             # 可阅读的历史目录
+  index.json           # 程序消费的日期索引
+  2026-11-26.md         # 每日 Markdown：条目、介绍、详情链接
+  2026-11-26.json       # 同一份快照的结构化数据
+```
+
+在插件中点击「历史归档」，可选择日期、前后翻阅、阅读离线文档，或通过「打开文档」交给系统默认应用。点击「保存今日」手动更新今天的快照。已归档数据不自动清理；可以将目录复制给其他人或交由本地工具消费，不会自动上传。
+
+JSON 文档使用 `schema: notchdesk.trends.daily/v1`，包含 `date`、`timezone`、`locale`、`generatedAt`（毫秒）、`revision`、`partial`、`descriptionFailures` 和 `sections`。每个来源保留 `source`、`url`、`sort`、`fetchedAt`、`status` 及 `items`；条目包含 `id`、`title`、`description`、`url` 和可用的排名/语言/下载/Star/文章日期等字段。补充介绍保留 `descriptionKind`（`model-card`、`page-meta` 或 `metadata`）和来源信息；`descriptionUnavailable` 表示仅有元数据。
+
+`index.json` 使用 `schema: notchdesk.trends.index/v1`，`days` 按日期倒序，提供相对的 Markdown/JSON 文件名、条目数量、生成时间、快照版本和部分失败标记。消费者可按 `date` 去重，按 `revision` 判断当天是否更新；读取时核对索引与文档的 `revision`，不在文件轮换的瞬间混用两个版本。单文件采用临时文件加原子替换，快照另存 SQLite，导出文件缺失时读取归档可从数据库恢复。
+
+来源状态为 `fresh`（本日新采集）、`stale`（缓存，保留原抓取日期）、`retained`（更新失败，保留当日此前成功内容）或 `unavailable`。部分失败仍保存可用来源并显式标记，约 30 分钟后重试；不会以空结果覆盖当天已成功采集的内容。每天自动归档不弹提醒，只按统一规范记录日志；不修改用户历史日期的文档。
+
+| MCP 方法 | 用途 |
+|---|---|
+| `trends_archive_save` | 保存今天，`force: true` 手动重新采集。默认复用已完成的今日归档，不产生重复条目。 |
+| `trends_archive_list` | 返回目录、可用日期、数量和调度设置；支持 `limit`（最多 3660）与 `before: YYYY-MM-DD` 分页。 |
+| `trends_archive_get` | `date: YYYY-MM-DD`，`format: "json" / "markdown"`；返回结构化 `document` 或 Markdown `content`，以及文件路径。缺失日期返回 `found: false`。 |
+| `trends_archive_open` | `date: YYYY-MM-DD`，用默认应用打开当日 Markdown。 |
+| `trends_open` | `source: "archive"`，可选 `date`，直接打开插件的历史归档界面。 |
+
+以上均复用当前 HTTP MCP Server，可供其他 harness 或插件通过统一接口消费。跨机器消费可分享导出目录，或使用已有安全的 MCP 连接方式；本功能不额外开放公网服务。
+
+`pnpm run check:trends:archive` 在隔离服务中模拟时钟与公开来源，验证每天调度、冷重启恢复、文档导出、重复调用、跨日保留、失败退避与内容保留；加 `--online` 生成真实来源的当日示例。`pnpm run check:learning:ui` 覆盖历史日期选择、保存今日和文档打开交互。正式业务数据与桌面程序不参与这些检查。
+
 ### 词汇学习与多来源趋势（0.8.0）
 
 - **探索**：内置 20 个开发与 AI 词汇，离线可用。每词提供 IPA 音标、中英文释义、至少两条原创英文例句及中文译文。每次换词只从未收藏且资料完整的词中选择，同一轮不重复；一轮结束后开始下一轮。收藏当前词后会转到另一个未收藏的词。
@@ -263,13 +303,13 @@ open release
 ```text
 release/
   mac-arm64/
-    NotchDesk-0.8.0-mac-arm64.dmg
-    NotchDesk-0.8.0-mac-arm64.zip
+    NotchDesk-0.9.0-mac-arm64.dmg
+    NotchDesk-0.9.0-mac-arm64.zip
     SHA256SUMS.txt
     build-manifest.json
   mac-x64/
-    NotchDesk-0.8.0-mac-x64.dmg
-    NotchDesk-0.8.0-mac-x64.zip
+    NotchDesk-0.9.0-mac-x64.dmg
+    NotchDesk-0.9.0-mac-x64.zip
     SHA256SUMS.txt
     build-manifest.json
 ```

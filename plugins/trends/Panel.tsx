@@ -1,7 +1,8 @@
 import { createPluginTranslator, currentLocale } from '../../src/ui/i18n';
 const { fmt: tr } = createPluginTranslator('trends');
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Download, Link2, Plus, RefreshCw, Star, Trash2 } from 'lucide-react';
+import { Archive, ArrowUpRight, Download, Link2, Plus, RefreshCw, Star, Trash2 } from 'lucide-react';
+import { TrendsArchive } from './Archive';
 import { DataMessage, Empty, IconButton, rowsFrom, useActions, useData, usePanelDraft, type PanelProps } from '../../src/ui/primitives';
 import { errorMessage } from '../../src/ui/types';
 import './style.css';
@@ -10,13 +11,15 @@ const links = { github: 'https://github.com/trending?since=daily', huggingface: 
 function open(url: string, feedback: PanelProps['feedback']) { void window.notch.openExternal(url).catch(error => feedback(errorMessage(error), 'error')); }
 export function TrendsPanel(props: PanelProps) {
     const requestedSource = props.itemId?.split(':')[0];
+    const requestedDate = requestedSource === 'archive' ? props.itemId?.split(':')[1] || undefined : undefined;
+    const [history, setHistory] = useState(requestedSource === 'archive');
     const [source, setSource] = useState<Source>(requestedSource === 'huggingface' || requestedSource === 'claude' ? requestedSource : 'github');
-    useEffect(() => { if (requestedSource === 'github' || requestedSource === 'huggingface' || requestedSource === 'claude') setSource(requestedSource); }, [props.itemId]);
+    useEffect(() => { if (requestedSource === 'archive') setHistory(true); else if (requestedSource === 'github' || requestedSource === 'huggingface' || requestedSource === 'claude') { setSource(requestedSource); setHistory(false); } }, [props.itemId]);
     return <div className="trends-workspace"><div className="toolbar trends-source-toolbar"><div className="segments trends-source-tabs" role="group" aria-label={tr('趋势来源')}>
-        {(['github', 'huggingface', 'claude'] as const).map(value => <button key={value} aria-pressed={source === value} onClick={() => { if (value !== source) props.edit(false); setSource(value); }}>{value === 'github' ? 'GitHub' : value === 'huggingface' ? 'Hugging Face' : 'claude.dev'}</button>)}
+        {(['github', 'huggingface', 'claude'] as const).map(value => <button key={value} aria-pressed={!history && source === value} onClick={() => { if (value !== source || history) props.edit(false); setSource(value); setHistory(false); }}>{value === 'github' ? 'GitHub' : value === 'huggingface' ? 'Hugging Face' : 'claude.dev'}</button>)}
     </div></div>
-    <div className="trends-page-link"><button className="text-button link" onClick={() => open(links[source], props.feedback)}>{source === 'github' ? tr('打开今日 GitHub Trending') : source === 'huggingface' ? tr('打开 Hugging Face 模型榜') : tr('打开 claude.dev')}<ArrowUpRight size={13}/></button></div>
-    {source === 'github' ? <GitHubPanel {...props}/> : <FeedPanel key={source} source={source} {...props}/>}</div>;
+    <div className="trends-page-link">{!history && <button className="text-button link" onClick={() => open(links[source], props.feedback)}>{source === 'github' ? tr('打开今日 GitHub Trending') : source === 'huggingface' ? tr('打开 Hugging Face 模型榜') : tr('打开 claude.dev')}<ArrowUpRight size={13}/></button>}<button className="text-button link" aria-pressed={history} onClick={() => { props.edit(false); setHistory(value => !value); }}><Archive size={13}/>{history ? tr('返回实时趋势') : tr('历史归档')}</button></div>
+    {history ? <TrendsArchive {...props} requestedDate={requestedDate}/> : source === 'github' ? <GitHubPanel {...props}/> : <FeedPanel key={source} source={source} {...props}/>}</div>;
 }
 function FeedPanel({ source, revision, feedback }: PanelProps & { source: 'huggingface' | 'claude' }) {
     const feed = useData<any>('trends_feed_list', revision, null, { source });

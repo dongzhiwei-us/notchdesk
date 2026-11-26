@@ -8,6 +8,7 @@ const periodSchema = choice('daily', 'weekly', 'monthly');
 const numberFrom = (text) => Number(text.match(/[\d,]+/)?.[0]?.replaceAll(',', '') ?? 0);
 const github = 'https://github.com';
 const { sources: feedSources, loadFeed } = require('./feeds.cjs');
+const { createArchive } = require('./archive.cjs');
 
 async function loadTrending(period, language) {
   const { load } = require('cheerio');
@@ -56,9 +57,12 @@ function repoCard(item, provider, label) {
 module.exports.activate = (ctx) => {
   const inFlight = new Map();
 
-  action(ctx, 'trends_open', '打开 GitHub、Hugging Face 或 claude.dev 趋势界面', { source: choice('github', 'huggingface', 'claude') }, [], ({ source = 'github' }) => ctx.native('ui.open', { view: 'trends', pluginId: 'trends', itemId: source + ':' + record({}).id }));
+  action(ctx, 'trends_open', '打开实时趋势或历史归档。source=archive 时可指定 date=YYYY-MM-DD', { source: choice('github', 'huggingface', 'claude', 'archive'), date: { ...text(10), pattern: '^\\d{4}-\\d{2}-\\d{2}$' } }, [], ({ source = 'github', date }) => {
+    if (date) require('./archive.cjs').validDay(date);
+    return ctx.native('ui.open', { view: 'trends', pluginId: 'trends', itemId: source + ':' + (date ?? '') + ':' + record({}).id });
+  });
 
-  action(ctx, 'trends_feed_list', '查询 Hugging Face 热门模型 Top 10 或 claude.dev 最新文章 10 篇，包含来源、抓取时间及缓存状态', { source: choice('huggingface', 'claude'), force: boolean }, ['source'], ({ source, force }) => {
+  function publicFeed(source, force) {
     const key = 'feed:' + source, previous = ctx.store.get(key, null);
     if (!force && previous && Date.now() - previous.fetchedAt < (ctx.config().cacheMinutes ?? 20) * 60000) return { ...previous, stale: false };
     if (inFlight.has(key)) return inFlight.get(key);
@@ -68,7 +72,8 @@ module.exports.activate = (ctx) => {
         return { source, url: feedSources[source].url, sort: feedSources[source].sort, items: previous?.items ?? [], fetchedAt: previous?.fetchedAt ?? null, stale: !!previous, error: error.message };
       }).finally(() => inFlight.delete(key));
     inFlight.set(key, task); return task;
-  });
+  }
+  action(ctx, 'trends_feed_list', '查询 Hugging Face 热门模型 Top 10 或 claude.dev 最新文章 10 篇，包含来源、抓取时间及缓存状态', { source: choice('huggingface', 'claude'), force: boolean }, ['source'], ({ source, force }) => publicFeed(source, force));
 
   function trending(period, language, force, cacheMinutes) {
     const key = period + ':' + language;
@@ -136,5 +141,10 @@ module.exports.activate = (ctx) => {
     if (language && !slug.test(language)) throw new Error('请输入有效的 GitHub Trending 语言标识');
     const [publicResult, sources] = await Promise.all([trending(period, language, force, config.cacheMinutes ?? 20), personal()]);
     return { ...publicResult, period, language, sources, personalized: sources.flatMap((source) => source.items) };
+  });
+  return createArchive(ctx, {
+    github: () => trending('daily', '', true, ctx.config().cacheMinutes ?? 20),
+    huggingface: () => publicFeed('huggingface', true),
+    claude: () => publicFeed('claude', true),
   });
 };

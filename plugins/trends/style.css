@@ -1,7 +1,7 @@
 .trends-workspace { min-width:0; container-type:inline-size; }
 .trends-source-tabs { display:flex; flex:1; }
 .trends-source-tabs button { flex:1; white-space:nowrap; min-height:30px; }
-.trends-page-link { margin:4px 1px 14px; }
+.trends-page-link { margin:4px 1px 14px; display:flex; align-items:center; justify-content:space-between; gap:6px 12px; flex-wrap:wrap; }
 .trends-page-link button { display:inline-flex; gap:5px; align-items:center; font-size:12px; min-height:28px; }
 .trends-github-toolbar { flex-wrap:wrap; }
 .trends-feed .subhead { margin-top:8px; }
@@ -16,3 +16,17 @@
 .trends-fetch-time { display:block; margin:14px 0 4px; font-size:11px; }
 .trends-feed .inline-error span { display:block; font-size:11px; overflow-wrap:anywhere; }
 @container (max-width:340px) { .trends-source-tabs button { padding-inline:6px; font-size:11px; } .trends-ranked-row { gap:8px; } }
+.trends-archive-toolbar { flex-wrap:wrap; gap:8px; }
+.trends-archive-date { display:flex; align-items:center; gap:4px; }
+.trends-archive-date input { width:146px; min-height:30px; font-size:12px; }
+.trends-archive-summary { display:grid; gap:10px; margin:8px 0 14px; }
+.trends-archive-summary small { font-size:11px; line-height:1.6; }
+.trends-archive-summary select { width:100%; min-width:0; }
+.trends-archive-filebar { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:10px 0; border-block:1px solid var(--divider); margin:10px 0 16px; font-size:11px; }
+.trends-archive-document { user-select:text; }
+.trends-archive-document .markdown-body h1 { font-size:21px; }
+.trends-archive-document .markdown-body h2 { font-size:16px; padding-top:10px; border-top:1px solid var(--divider); }
+.trends-archive-document .markdown-body h3 { font-size:14px; }
+.trends-archive-directory { margin-top:16px; font-size:11px; }
+.trends-archive-directory summary { cursor:pointer; min-height:28px; }
+.trends-archive-directory code { display:block; margin:8px 0; overflow-wrap:anywhere; user-select:all; }

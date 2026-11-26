@@ -18,6 +18,8 @@ import {applyLocale,subscribeLocale,currentLocale} from './src/ui/i18n';import c
 import vocabularyZh from './plugins/vocabulary/locales/zh-CN.json';import vocabularyEn from './plugins/vocabulary/locales/en-US.json';import trendsZh from './plugins/trends/locales/zh-CN.json';import trendsEn from './plugins/trends/locales/en-US.json';import './src/ui/style.css';
 const messages=[{id:'vocabulary',translations:{'zh-CN':vocabularyZh,'en-US':vocabularyEn}},{id:'trends',translations:{'zh-CN':trendsZh,'en-US':trendsEn}}];
 let words=structuredClone(catalog),position=0;
+const now=new Date(),today=[now.getFullYear(),String(now.getMonth()+1).padStart(2,'0'),String(now.getDate()).padStart(2,'0')].join('-');
+let archives={'2026-11-25':'# 开源趋势 · 2026-11-25\\n\\n## GitHub Trending\\n\\n### 1. public/agent\\n\\nA useful developer tool.\\n\\n[查看详情](https://github.com/public/agent)','2026-11-24':'# 开源趋势 · 2026-11-24\\n\\nOlder captured trends.'};
 window.opened=[];window.notch.openExternal=async url=>window.opened.push(url);
 window.notch.rpc=async(method,args={})=>{
  if(method==='vocabulary_list'){const favorites=words.filter(word=>word.favorite);return structuredClone({words,favorites,due:favorites.filter(word=>!word.reviewed),reviewed:favorites.filter(word=>word.reviewed).length});}
@@ -26,6 +28,10 @@ window.notch.rpc=async(method,args={})=>{
  if(method==='vocabulary_review'){const word=words.find(word=>word.id===args.id);word.reviewed=true;return structuredClone(word);}
  if(method==='vocabulary_add'){const word={...args,id:args.id??'custom-word',favorite:true};words=words.filter(item=>item.id!==word.id);words.unshift(word);return structuredClone(word);}
  if(method==='vocabulary_remove'){words=words.filter(word=>word.id!==args.id);return {removed:true};}
+ if(method==='trends_archive_list')return {directory:'/local/notchdesk/assets/trends/archives',days:Object.keys(archives).sort().reverse().map(date=>({date,count:21,partial:false})),schedule:{enabled:true,time:'10:00',timezone:'Asia/Shanghai'}};
+ if(method==='trends_archive_get')return {date:args.date,found:!!archives[args.date],content:archives[args.date]};
+ if(method==='trends_archive_save'){archives[today]='# 开源趋势 · '+today+'\\n\\nSaved today.';return {date:today};}
+ if(method==='trends_archive_open'){window.archiveOpened=args.date;return {ok:true};}
  if(method==='trends_sources')return [];
  if(method==='trends_list')return {items:[{id:'org/repo',fullName:'org/repo',url:'https://github.com/org/repo',description:'Today’s public repository trend',stars:1234,language:'TypeScript'}]};
  if(method==='trends_feed_list'){const hf=args.source==='huggingface';return {source:args.source,items:Array.from({length:10},(_,index)=>({id:'item-'+index,rank:index+1,title:hf?'organization/long-developer-model-'+index:'Building reliable agent workflows: a practical guide '+index,url:hf?'https://huggingface.co/organization/model-'+index:'https://claude.dev/blog/post-'+index+'/',task:'text-generation',likes:1200,downloads:480000,date:'2026-11-25',readingMinutes:8})),fetchedAt:Date.now(),...(args.force?{stale:true,error:'offline fixture'}:{})};}
@@ -71,6 +77,15 @@ try {
     await page.locator('#fixture-trends').click();
     await page.getByRole('button', { name: '打开今日 GitHub Trending', exact: true }).click();
     assert.equal(await page.evaluate(() => window.opened.at(-1)), 'https://github.com/trending?since=daily');
+    await page.getByRole('button', { name: '历史归档', exact: true }).click();
+    await page.locator('.trends-archive-document h1').filter({hasText:'2026-11-25'}).waitFor();
+    await page.getByRole('button', {name:'更早的归档',exact:true}).click();
+    await page.locator('.trends-archive-document h1').filter({hasText:'2026-11-24'}).waitFor();
+    await page.getByRole('button', {name:'保存今日',exact:true}).click();
+    await page.getByText('Saved today.',{exact:true}).waitFor();
+    await page.getByRole('button', {name:'打开文档',exact:true}).click();
+    assert.ok(await page.evaluate(()=>window.archiveOpened));
+    await page.locator('.trends-archive').screenshot({path:path.join(scratch,'archive-history.png')});
     await page.getByRole('button', { name: 'Hugging Face', exact: true }).click();
     await page.locator('.trends-ranked-row').nth(9).waitFor();
     assert.equal(await page.locator('.trends-ranked-row').count(), 10);

@@ -24,7 +24,7 @@ for (const plugin of ['trends', 'vocabulary']) await build({ entryPoints: [path.
 const legacy = { id: 'legacy-word', word: 'idempotent', meaning: '幂等', example: 'A custom sentence must survive this upgrade.', reviewAt: 0, reviewCount: 3, intervalDays: 2, createdAt: 1, updatedAt: 1 };
 const seed = new DatabaseSync(path.join(data, 'island.sqlite'));
 seed.exec('CREATE TABLE kv (namespace TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(namespace,key)) STRICT');
-seed.prepare('INSERT INTO kv VALUES (?,?,?)').run('plugin:vocabulary', 'rows', JSON.stringify([legacy])); seed.close();
+seed.prepare('INSERT INTO kv VALUES (?,?,?)').run('plugin:vocabulary', 'rows', JSON.stringify([legacy])); seed.prepare('INSERT INTO kv VALUES (?,?,?)').run('settings', 'trends', JSON.stringify({ archiveEnabled: false })); seed.close();
 let child, client, transport, previousToken, errors = '';
 const checks = [];
 function pass(message) { checks.push(message); console.log('PASS', message); }
@@ -83,7 +83,7 @@ try {
     const html = Array.from({ length: 12 }, (_, index) => `<a class="post" href="/blog/article-${index}/"><div class="p-title">Article ${index} &amp; AI</div><div class="p-date">Nov ${index + 1}, 2026</div><div class="p-time">5 min</div></a>`).join('') + '<a href="https://attacker.invalid/blog/escape/"><h2>Ignore this</h2></a>';
     const parsed = parseBlogs(html); assert.equal(parsed.length, 10); assert.equal(parsed[0].date, '2026-11-12'); assert.equal(parsed[0].title, 'Article 11 & AI');
     const actions = new Map(), cache = new Map();
-    require('../plugins/trends/index.cjs').activate({ action: (name, description, schema, run) => actions.set(name, run), store: { get: (key, fallback) => cache.get(key) ?? fallback, set: (key, value) => cache.set(key, value) }, config: () => ({}), log() {} });
+    require('../plugins/trends/index.cjs').activate({ action: (name, description, schema, run) => actions.set(name, run), store: { get: (key, fallback) => cache.get(key) ?? fallback, set: (key, value) => cache.set(key, value) }, config: () => ({}), assetDir: path.join(scratch, "unit-assets"), onTick() {}, log() {} });
     const originalFetch = globalThis.fetch; let requests = 0;
     try {
         globalThis.fetch = async url => { requests++; return new Response(String(url).includes('huggingface') ? JSON.stringify(models) : html); };

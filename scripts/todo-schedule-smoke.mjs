@@ -20,7 +20,7 @@ const markdown = '# Release notes\n\n- Keep **local data**\n- Review `todo_add`\
 const legacy = { id: 'legacy-due-only', title: 'Legacy deadline', notes: 'Keep this note', dueAt: later, status: 'pending', createdAt: 1, updatedAt: 1 };
 const seed = new DatabaseSync(path.join(data, 'island.sqlite'));
 seed.exec('CREATE TABLE kv (namespace TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(namespace,key)) STRICT');
-seed.prepare('INSERT INTO kv VALUES (?,?,?)').run('plugin:todo', 'rows', JSON.stringify([legacy])); seed.close();
+seed.prepare('INSERT INTO kv VALUES (?,?,?)').run('plugin:todo', 'rows', JSON.stringify([legacy])); seed.prepare('INSERT INTO kv VALUES (?,?,?)').run('settings', 'trends', JSON.stringify({ archiveEnabled: false })); seed.close();
 let child, client, transport, previousToken, errors = '';
 const checks = [];
 function pass(message) { checks.push(message); console.log('PASS', message); }
