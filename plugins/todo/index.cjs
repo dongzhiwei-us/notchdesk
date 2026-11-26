@@ -2,11 +2,21 @@ const { action, text, choice, integer, instant, idSchema, rows, save, getRow, ch
 
 const statuses = choice('pending', 'in-progress', 'completed');
 
+// dueAt remains the deadline/reminder alias used by older clients and morning briefs.
+const normalize = (item) => ({ ...item, startAt: item.startAt ?? null, endAt: item.endAt ?? item.dueAt ?? null, dueAt: item.endAt ?? item.dueAt ?? null });
+function schedule(input, previous = {}) {
+  if (input.endAt !== undefined && input.dueAt !== undefined && input.endAt !== input.dueAt) throw new Error('结束时间与截止时间必须一致');
+  const startAt = input.startAt !== undefined ? input.startAt : previous.startAt ?? null;
+  const endAt = input.endAt !== undefined ? input.endAt : input.dueAt !== undefined ? input.dueAt : previous.endAt ?? previous.dueAt ?? null;
+  if (startAt != null && endAt != null && endAt < startAt) throw new Error('结束时间不能早于开始时间');
+  return { startAt, endAt, dueAt: endAt };
+}
+
 module.exports.activate = (ctx) => {
-  const list = () => rows(ctx).sort((a, b) =>
+  const list = () => rows(ctx).map(normalize).sort((a, b) =>
     Number(a.status === 'completed') - Number(b.status === 'completed') ||
-    (a.dueAt ?? Infinity) - (b.dueAt ?? Infinity) || b.createdAt - a.createdAt);
-  const fields = { title: text(240), notes: text(20000, 0), dueAt: instant };
+    (a.dueAt ?? a.startAt ?? Infinity) - (b.dueAt ?? b.startAt ?? Infinity) || b.createdAt - a.createdAt);
+  const fields = { title: text(240), notes: text(20000, 0), startAt: instant, endAt: instant, dueAt: instant };
   async function retireNotice(id) {
     if (!id) return;
     try {
@@ -16,17 +26,18 @@ module.exports.activate = (ctx) => {
     }
   }
 
-  action(ctx, 'todo_list', '查看待办事项和截止时间', {}, [], list);
-  action(ctx, 'todo_add', '新增待办事项', { ...fields, sourceKey: text(300) }, ['title'], ({ title, notes = '', dueAt = null, sourceKey }) => {
+  action(ctx, 'todo_list', '查看本地保存的待办、Markdown 内容和起止时间', {}, [], list);
+  action(ctx, 'todo_add', '新增待办，支持 Markdown notes、startAt 开始时间和 endAt 结束时间（毫秒时间戳），dueAt 为兼容别名', { ...fields, sourceKey: text(300) }, ['title'], ({ title, notes = '', sourceKey, ...times }) => {
     const previous = sourceKey && rows(ctx).find((item) => item.sourceKey === sourceKey);
-    if (previous) return previous;
-    const row = record({ title: requiredText(title), notes, dueAt, status: 'pending', snoozedUntil: null, ...(sourceKey ? { sourceKey } : {}) });
+    if (previous) return normalize(previous);
+    const row = record({ title: requiredText(title), notes, ...schedule(times), status: 'pending', snoozedUntil: null, ...(sourceKey ? { sourceKey } : {}) });
     save(ctx, [row, ...rows(ctx)]);
     return row;
   }, {activate:true});
-  action(ctx, 'todo_update', '修改待办或标记完成', { id: idSchema, ...fields, status: statuses }, ['id'], async ({ id, ...update }) => {
+  action(ctx, 'todo_update', '修改待办的 Markdown 内容、起止时间或完成状态，时间可设为 null 清空', { id: idSchema, ...fields, status: statuses }, ['id'], async ({ id, ...update }) => {
     const existing = getRow(ctx, id);
-    const changedTime = update.dueAt !== undefined && update.dueAt !== existing.dueAt;
+    Object.assign(update, schedule(update, existing));
+    const changedTime = update.endAt !== (existing.endAt ?? existing.dueAt ?? null);
     if (update.title !== undefined) update.title = requiredText(update.title);
     if (changedTime) {
       update.snoozedUntil = null;
@@ -55,7 +66,7 @@ module.exports.activate = (ctx) => {
     if (row.status === 'completed' || row.dueAt == null) throw new Error('该待办没有可延后的提醒');
     const item = change(ctx, id, { snoozedUntil: Date.now() + (minutes ?? ctx.config().snoozeMinutes ?? 5) * 60000, noticeId: null });
     await retireNotice(row.noticeId);
-    return item;
+    return normalize(item);
   });
 
   ctx.onTick(({ now }) => {

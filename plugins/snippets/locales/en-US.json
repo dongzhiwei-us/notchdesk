@@ -36,5 +36,10 @@
   "两项休息提醒同时到期。": "Time to hydrate and take a walk.",
   "今天的工作时间已达到{{kind}}间隔。": "You have reached your {{kind}} interval.",
   "稍后": "Snooze",
-  "跳过本次": "Skip this reminder"
+  "跳过本次": "Skip this reminder",
+  "预览": "Preview",
+  "暂无内容可预览": "Nothing to preview yet",
+  "支持 Markdown：标题、列表、链接和代码块": "Markdown: headings, lists, links, and code blocks",
+  "编辑": "Edit",
+  "请输入片段内容": "Enter snippet content"
 }

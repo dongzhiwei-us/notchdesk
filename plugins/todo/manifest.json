@@ -2,7 +2,7 @@
   "id": "todo",
   "name": "待办",
   "icon": "list-todo",
-  "version": "0.6.8",
+  "version": "0.7.0",
   "entry": "index.cjs",
   "settings": {
     "reminders": {
