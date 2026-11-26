@@ -5,7 +5,7 @@ import { ArrowUpRight, Link2, Plus, RefreshCw, Star, Trash2 } from 'lucide-react
 import { DataMessage, Empty, IconButton, rowsFrom, useActions, useData, usePanelDraft, type PanelProps } from '../../src/ui/primitives';
 import { errorMessage } from '../../src/ui/types';
 export function TrendsPanel({ revision, feedback, edit }: PanelProps) {
-    const [period, setPeriod] = useState('weekly');
+    const [period, setPeriod] = useState('daily');
     const [language, setLanguage] = useState('');
     const [form, setForm] = usePanelDraft<{
         provider: string;
