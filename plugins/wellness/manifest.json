@@ -2,7 +2,7 @@
   "id": "wellness",
   "name": "喝水走动",
   "icon": "heart-pulse",
-  "version": "0.9.0",
+  "version": "0.10.0",
   "entry": "index.cjs",
   "settings": {
     "enabled": {
